@@ -240,7 +240,7 @@ STACKSIZE 0x100	  /* size of the stack (will be allocated in DEFAULT_RAM) */
 
 /* use these definitions in plane of the vector table ('vectors') above */
 VECTOR 0 _Startup
-//VECTOR ADDRESS TCRC2 TimerOverflow_ISR
+//VECTOR ADDRESS 0xFFEE TimerOverflow_ISR
 
 //VECTOR 0 Entry  /* reset vector: this is the default entry point for an Assembly application. */
 //INIT Entry      /* for assembly applications: that this is as well the initialization entry point */
