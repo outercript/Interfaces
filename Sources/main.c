@@ -1,7 +1,6 @@
 #include <hidef.h>      /* common defines and macros */
-#include "mc9s12xep100.h"      /* derivative-specific definitions */
-
-#pragma LINK_INFO DERIVATIVE "mc9s12xep100"
+#include <MC9S12XEP100.h>     /* derivative-specific definitions */
+#pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
 // Unsecured status flash
 const unsigned char flash_security  @0xFF0F = 0xFE;
@@ -13,9 +12,11 @@ void TimerInit(void);
 
 /* Start interrupts */  
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
-__interrupt 0xEE void TimerOverflow_ISR(void){
-    PORTA = 0x0F;
-    //TIM_TFLG2 = 0x80; // Borra el flag de Interrupcion
+interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
+            TIM_TFLG1 = 0x01;
+            PORTA = 0x0F;
+            manuel ^= 1; 
+            TIM_TC0 = TIM_TCNT + 0x0FFF;   
 }
 #pragma CODE_SEG DEFAULT
 /* End interrupts */
@@ -48,24 +49,16 @@ void main(void) {
     TIM_TIE  = 0x01;
     TIM_TC0  = TIM_TCNT + 50; 
     
-    //EnableInterrupts;
+    EnableInterrupts;
     
     for(;;) {
-        if(TIM_TFLG1 & TIM_TFLG1_C0F){
-            TIM_TFLG1 = 0x01;
-            PORTA = 0x0F;
-            manuel ^= 1; 
-            TIM_TC0 = TIM_TCNT + 0x0FFF;    
-        }
         
         if (manuel){   
             PORTA = 0x0F;
-            //manuel = 0;
         }
         
         else{
             PORTA = 0x00;
-            //manuel = 1;
         }
         
     } /* loop forever */
