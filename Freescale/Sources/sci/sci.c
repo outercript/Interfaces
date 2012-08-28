@@ -139,3 +139,46 @@ Bool SCICheckGetBuffer(unsigned char sci_num)
 
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
+// ConvertCharAscii
+// --------------------------------------------------------------------------------------
+// This function converts a single-digit hexadecimal number in its ASCII code
+/////////////////////////////////////////////////////////////////////////////////////////
+unsigned char ConvertCharAscii(unsigned char value)
+{
+  if (value<10)
+    return value+48;
+  else
+    return value+55;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SendString
+// --------------------------------------------------------------------------------------
+// Sends a char string on the SCI
+/////////////////////////////////////////////////////////////////////////////////////////
+void SendString(unsigned char SCI_PORT, char buf[30])
+{
+  int i; 
+   
+  for (i=0;buf[i]!='\0';i++)
+    (void)SCISendBuffer(SCI_PORT, buf[i]);
+  
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SendHexValue
+// --------------------------------------------------------------------------------------
+// This function sends a two-digit hex value on the SCI
+/////////////////////////////////////////////////////////////////////////////////////////
+void SendHexValue(unsigned char SCI_PORT, unsigned char hex_value)
+{
+  char hex_L, hex_H;
+
+  hex_L = hex_value & 0x0F;
+  hex_H = hex_value>>4;
+  (void)SCISendBuffer(SCI_PORT, ConvertCharAscii(hex_H));
+  (void)SCISendBuffer(SCI_PORT, ConvertCharAscii(hex_L));
+  SendString(SCI_PORT, "\r\n\0");
+}
+

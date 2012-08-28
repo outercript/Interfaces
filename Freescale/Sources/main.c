@@ -1,11 +1,14 @@
 #include <hidef.h>      /* common defines and macros */
 #include <MC9S12XEP100.h>     /* derivative-specific definitions */
+#include "sci.h"
+
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
 // Unsecured status flash
 const unsigned char flash_security  @0xFF0F = 0xFE;
 
 volatile unsigned int x;
+volatile unsigned int count;
 volatile unsigned int time;
 volatile Bool manuel;
 
@@ -15,9 +18,11 @@ void TimerInit(void);
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
             TIM_TFLG1 = 0x01;
+            TIM_TC0 = TIM_TCNT + time;
+            
             PORTA = 0x0F;
-            manuel ^= 1; 
-            TIM_TC0 = TIM_TCNT + time;   
+            manuel ^= 1;
+            count += 1;         
 }
 #pragma CODE_SEG DEFAULT
 /* End interrupts */
@@ -45,11 +50,14 @@ void PeriphInit(void){
 	  ATD0CTL3 = 0x13;
 	  // fBUS=2MHz, fATDCLK = 1 MHz (PRESCLAER = 0) Select 24 Sample Time
 	  ATD0CTL4 = 0xE0;
+	  
+	  SCIOpenCommunication(SCI_0); 
 }
 
 
 void main(void) {
     manuel = 0;
+    count = 0;
 	time = 0x0FFF;
         
     PeriphInit();
@@ -71,12 +79,17 @@ void main(void) {
 		
 
         
-        if (manuel){   
+        if (manuel){
             PORTA = 0x0F;
         }
         
         else{
             PORTA = 0x00;
+        }
+        
+        if(count > 255){      
+           SendString(SCI_0, "Togle 255 veces =D \r\n\0");
+           count = 0;
         }
         
     } /* loop forever */
