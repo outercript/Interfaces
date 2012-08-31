@@ -32,6 +32,7 @@ interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
 }
 
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
+    if(sciRxReady) return;
     // Clear Interrupt by reading status and data registers
     sciRxBuffer[sciRxIndex] = SCI0SR1; // Read Status Register
     sciRxBuffer[sciRxIndex] = SCI0DRL; // Read Data Register
@@ -88,9 +89,12 @@ void main(void) {
     PeriphInit();
     TimerInit();
     
-    TIM_TIOS = 0x01;
-    TIM_TIE  = 0x01;
-    TIM_TC0  = TIM_TCNT + 50;
+    //Output Compare
+    TIM_TIOS = 0x01; //Enable Output compare Port 0
+    TIM_TIE  = 0x01; //Enable Timer Interrupt Output Compare 0
+    TIM_TC0  = TIM_TCNT + 50; // Set a dummy time to generate interrupt
+    
+    // SCI - 2 = Enable recieve interrupt, C = Enable Recieve/Transmit
     SCI0CR2 = 0x2C;
     
     EnableInterrupts;
