@@ -43,7 +43,7 @@ void SCIOpenCommunication(unsigned char sci_num)
   sci_pt[SCIBDH] = (unsigned char)(13 >> 8);
   sci_pt[SCIBDL] = (unsigned char)13;
   // Trasmitter and Receiver Enable
-  sci_pt[SCICR2] = 0x0C;
+  sci_pt[SCICR2] = 0x2C;
   
 }
 
@@ -111,8 +111,7 @@ Bool SCIGetBuffer(unsigned char sci_num, unsigned char *buffer)
   if(!sci[sci_num].ena)
     return(FALSE);
   sci_pt = sci[sci_num].init_reg;
-  while(!(sci_pt[SCISR1]&0x20))
-    ;
+  while(!(sci_pt[SCISR1] & 0x20));
   // Get Buffer and clear RDRF flag
   *buffer = sci_pt[SCISR1];
   *buffer = sci_pt[SCIDRL];

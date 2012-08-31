@@ -10,20 +10,43 @@ const unsigned char flash_security  @0xFF0F = 0xFE;
 volatile unsigned int x;
 volatile unsigned int count;
 volatile unsigned int time;
+
 volatile Bool manuel;
+
+// Serial Port 0
+volatile Bool sciRxReady;
+volatile char sciRxBuffer[30];
+volatile unsigned int sciRxIndex;
 
 void TimerInit(void);
 
 /* Start interrupts */  
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
-            TIM_TFLG1 = 0x01;
-            TIM_TC0 = TIM_TCNT + time;
-            
-            PORTA = 0x0F;
-            manuel ^= 1;
-            count += 1;         
+        TIM_TFLG1 = 0x01;
+        TIM_TC0 = TIM_TCNT + time;
+        
+        PORTA = 0x0F;
+        manuel ^= 1;
+        count += 1;         
 }
+
+interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
+    // Clear Interrupt by reading status and data registers
+    sciRxBuffer[sciRxIndex] = SCI0SR1; // Read Status Register
+    sciRxBuffer[sciRxIndex] = SCI0DRL; // Read Data Register
+    
+    // Mark reception complete if char is 13 or \n
+    if(sciRxBuffer[sciRxIndex] == 13){
+        sciRxReady = TRUE;
+    }
+    
+    // Otherwise increase buffer index
+    else{
+        sciRxIndex += 1;
+    }                       
+}
+
 #pragma CODE_SEG DEFAULT
 /* End interrupts */
 
@@ -43,15 +66,17 @@ void PeriphInit(void){
     DDRA  = 0x0F; // Configure A[3..0] as outputs 
     PORTA = 0x00; // Output 0
 	
-	  // Configures the ATD peripheral
-	  // 8 bit data resolution
-	  ATD0CTL1 = 0x10; 
-	  // Left justified data, 2 conversion sequence and non-FIFO mode
-	  ATD0CTL3 = 0x13;
-	  // fBUS=2MHz, fATDCLK = 1 MHz (PRESCLAER = 0) Select 24 Sample Time
-	  ATD0CTL4 = 0xE0;
-	  
-	  SCIOpenCommunication(SCI_0); 
+    // Configures the ATD peripheral
+    // 8 bit data resolution
+    ATD0CTL1 = 0x10; 
+    // Left justified data, 2 conversion sequence and non-FIFO mode
+    ATD0CTL3 = 0x13;
+    // fBUS=2MHz, fATDCLK = 1 MHz (PRESCLAER = 0) Select 24 Sample Time
+    ATD0CTL4 = 0xE0;
+
+    SCIOpenCommunication(SCI_0); 
+    sciRxReady = FALSE;
+    sciRxIndex = 0;
 }
 
 
@@ -65,7 +90,8 @@ void main(void) {
     
     TIM_TIOS = 0x01;
     TIM_TIE  = 0x01;
-    TIM_TC0  = TIM_TCNT + 50; 
+    TIM_TC0  = TIM_TCNT + 50;
+    SCI0CR2 = 0x2C;
     
     EnableInterrupts;
     
