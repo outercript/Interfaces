@@ -1,4 +1,5 @@
 #include <hidef.h>      /* common defines and macros */
+#include <stdio.h>
 #include <MC9S12XEP100.h>     /* derivative-specific definitions */
 #include "sci.h"
 
@@ -14,9 +15,10 @@ volatile unsigned int time;
 volatile Bool manuel;
 
 // Serial Port 0
-volatile Bool sciRxReady;
-volatile char sciRxBuffer[30];
-volatile unsigned int sciRxIndex;
+Bool sciRxReady;
+Bool sciRxOverflow;
+char sciRxBuffer[30];
+unsigned int sciRxIndex;
 
 void TimerInit(void);
 
@@ -26,26 +28,33 @@ interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
         TIM_TFLG1 = 0x01;
         TIM_TC0 = TIM_TCNT + time;
         
-        PORTA = 0x0F;
         manuel ^= 1;
         count += 1;         
 }
 
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
-    if(sciRxReady) return;
+    
+    if(sciRxReady) 
+        return;
+    
     // Clear Interrupt by reading status and data registers
     sciRxBuffer[sciRxIndex] = SCI0SR1; // Read Status Register
     sciRxBuffer[sciRxIndex] = SCI0DRL; // Read Data Register
     
-    // Mark reception complete if char is 13 or \n
+    // Mark reception complete if char is 13 or \r
     if(sciRxBuffer[sciRxIndex] == 13){
         sciRxReady = TRUE;
+        sciRxBuffer[sciRxIndex] = 0;
     }
     
-    // Otherwise increase buffer index
+    // Prevent buffer overflow by keeping within the range.
+    if(sciRxIndex < 30){
+        sciRxIndex += 1; 
+    } 
+    
     else{
-        sciRxIndex += 1;
-    }                       
+        sciRxOverflow = TRUE;
+    }
 }
 
 #pragma CODE_SEG DEFAULT
@@ -77,6 +86,7 @@ void PeriphInit(void){
 
     SCIOpenCommunication(SCI_0); 
     sciRxReady = FALSE;
+    sciRxOverflow = FALSE;
     sciRxIndex = 0;
 }
 
@@ -96,6 +106,7 @@ void main(void) {
     
     // SCI - 2 = Enable recieve interrupt, C = Enable Recieve/Transmit
     SCI0CR2 = 0x2C;
+    PORTA = 0x00;
     
     EnableInterrupts;
     
@@ -107,14 +118,40 @@ void main(void) {
 		    time = 64 * ATD0DR0H;    
 		}
 		
-
-        
-        if (manuel){
-            PORTA = 0x0F;
+        if(sciRxReady) {
+            PORTA_PA0 = 1;
+            SendString(SCI_0, sciRxBuffer);
+            SendString(SCI_0, "\r\n\0");
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            sciRxIndex = 0;
+            sciRxReady = FALSE;
         }
         
         else{
-            PORTA = 0x00;
+            PORTA_PA0 = 0;
+        }
+        
+        if(sciRxOverflow) {
+            PORTA_PA1 = 1;
+            SendString(SCI_0, "Buffer overflow!\r\n\0");
+            SendString(SCI_0, "Erasing buffer!\r\n\0");
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            sciRxIndex = 0;
+            sciRxOverflow = FALSE;
+        }
+        
+        else{
+            PORTA_PA1 = 0;
+        }
+        
+        
+        
+        if (manuel){
+            PORTA_PA3 = 1;
+        }
+        
+        else{
+            PORTA_PA3 = 0;
         }
         
         if(count > 255){      
