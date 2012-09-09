@@ -1,142 +1,158 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 //
-// Serial Communication Interface (SCI) MC9S12XEP100
+// Software Serial Communication Interface (SCI) MC9S12XEP100
 //
 // --------------------------------------------------------------------------------------
-// Copyright (c) 2006 SofTec Microsystems
-// http://www.softecmicro.com/
+// Author : Oscar Suro
+// Last Modified: Sept 8, 2012
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
-#include "mc9s12xep100.h"
+
+#include <mc9s12xep100.h>
 #include "sci.h"
 
 
+/* Start interrupts */  
+#pragma CODE_SEG __NEAR_SEG NON_BANKED
+interrupt VectorNumber_Vtimch0 void SerialTx_ISR(void){
+    volatile int shift;
+    unsigned int temp;
+
+    // Clear Output Compare 0 Interrupt Flag
+    TIM_TFLG1 = TIM_TFLG1_C0F_MASK;
+         
+    // Setup default TX Time
+    TIM_TC0 = TIM_TCNT + SCI_TX_TIME;
+     
+    // Debug!!!
+    shift   = sciTxStatus;
+    temp    = sciTxBuffer[sciTxIndex];
+    
+    // Check for transmission end
+    if(temp == '\0'){
+        sciTxAvailable  = TRUE; // Make Tx Available
+        sciTxStatus     = 0;    // Reset Tx Status
+        sciTxIndex      = 0;    // Reset Tx Buffer Index
+        TIM_TIE_C0I     = FALSE;   // Enable Output compare Port 0   
+        return;  
+    }
+    
+    // Start bit
+    if(sciTxStatus == 0){        
+        TX_PIN = 0;
+        sciTxStatus++;
+    }
+    
+    // Data bits    
+    else if(sciTxStatus > 0 && sciTxStatus < 9){
+        shift = sciTxStatus - 1;
+        temp >>= shift;
+        
+        if(temp & 0x01){
+            TX_PIN = TRUE;
+        }
+        else{
+            TX_PIN = FALSE;
+        }
+        
+        sciTxStatus++;
+        
+    }
+    
+    // Stop bit  
+    else if(sciTxStatus == 9){
+        TX_PIN = 1;         // Raise Stop bit
+        sciTxStatus = 0;    // Reset Tx Status
+        sciTxIndex += 1;    // Increase Tx Buffer Index  
+    }
+
+}
+
+
+#pragma CODE_SEG DEFAULT
+/* End interrupts */
+
+
 /////////////////////////////////////////////////////////////////////////////////////////
+// TimerInit
+// --------------------------------------------------------------------------------------
+// Configures System timers for this thing to work =)
 /////////////////////////////////////////////////////////////////////////////////////////
-struct sci_peripheral
-{
-  Bool ena;
-  unsigned char *init_reg;
-} sci[2] = {
-    FALSE, &SCI0BDH,
-    FALSE, &SCI1BDH    
-  };
+void TimerInit(void){
+
+    // Setup Timer System Control Registers
+    TIM_TSCR1_TEN  = TRUE;      // Enable Timer
+    TIM_TSCR1_TFFCA = TRUE;     // Enable Fast Timer Flag Clear  
+
+    TIM_TSCR2_PR = 0;  // Select 1 Prescaler    
+    TIM_PACTL  = 0; // Setup Timer Preset  
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SCI_SetupTransmit
+// --------------------------------------------------------------------------------------
+// Configures & Initialize the Transmit Module
+/////////////////////////////////////////////////////////////////////////////////////////
+void SCI_SetupTransmit(){
+
+    // Initialize the Transmit Flags
+    sciTxAvailable  = TRUE;
+    sciTxIndex      = 0;
+    sciTxStatus     = 0;
+    TX_PIN          = TRUE;
+      
+    //Enable Output compare port 0 for Serial Transmit
+    TIM_TIOS_IOS0 = TRUE;   // Enable Output compare Port 0  
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////
+// SCI_SetupReceive
+// --------------------------------------------------------------------------------------
+// Configures & Initialize the Receive Module
+/////////////////////////////////////////////////////////////////////////////////////////
+void SCI_SetupRecieve(){
+
+    // Initialize the Receive Flags
+    sciRxReady      = FALSE;
+    sciRxOverflow   = FALSE;
+    sciRxIndex      = 0;
+    sciRxStatus     = 0;
+    
+    //Enable Output compare port 1 for Serial Receive
+    TIM_TIOS_IOS1 = TRUE;   // Enable Output compare Port 0
+    
+    // Configure time for Output Compare 1
+    TIM_TC1  = TIM_TCNT + SCI_RX_TIME;
+    
+    //Enable Timer Interrupt Output Compare 1 
+    TIM_TIE_C1I  = TRUE;    
+
+}
+
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // SCIOpenCommunication
 // --------------------------------------------------------------------------------------
 // Configures SCI registers for Enable Transmit and Receive data
-// SCI BAUD RATE = BUSCLK/(16*BR)
-// BUSCLK = 2 MHz
-// BAUD RATE = 9600
-// BR = 13 
-// Baud rate mismatch = 0.160 %
 /////////////////////////////////////////////////////////////////////////////////////////
-void SCIOpenCommunication(unsigned char sci_num)
-{
-
-  unsigned char *sci_pt;
-
-  sci[sci_num].ena = TRUE;
-  sci_pt = sci[sci_num].init_reg;
-  // Set Baud Rate Modulo Divisor
-  sci_pt[SCIBDH] = (unsigned char)(SCI_BR >> 8);
-  sci_pt[SCIBDL] = (unsigned char)SCI_BR;
-  // Trasmitter and Receiver Enable
-  sci_pt[SCICR2] = 0x2C;
-  
+void SCIOpenCommunication(){
+    // Initialize the Timer modules
+    TimerInit();
+    
+    // Initialize the Transmit Module
+    SCI_SetupTransmit();
+    
+    // Initialize the Receive Module
+    //SCI_SetupRecieve();
+    
+    EnableInterrupts;
+ 
 }
 
-/////////////////////////////////////////////////////////////////////////////////////////
-// SCICloseCommunication
-// --------------------------------------------------------------------------------------
-// Configures SCI (x) registers for disable Transmit and Receive data 
-/////////////////////////////////////////////////////////////////////////////////////////
-void SCICloseCommunication(unsigned char sci_num)
-{
-
-  unsigned char *sci_pt;
-  unsigned char data;
-  unsigned int i;
-
-  sci[sci_num].ena = FALSE;
-  sci_pt = sci[sci_num].init_reg;
-  i = 0;
-  // Verify that Receive Data Register is FULL
-  while(i < 1000 && !(sci_pt[SCISR1]&0x20))
-    i++;
-  if (sci_pt[SCISR1]&0x20)
-    // Clear RDRF Flag
-    data = sci_pt[SCIDRL];
-
-  sci_pt[SCIBDH] = 0;
-  sci_pt[SCIBDL] = 0;
-  // Trasmitter and Receiver Disable
-  sci_pt[SCICR2] = 0;
-  
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// SCISendBuffer
-// --------------------------------------------------------------------------------------
-// SCI Transmit Data. True if the buffer has been transmitted.
-/////////////////////////////////////////////////////////////////////////////////////////
-Bool SCISendBuffer(unsigned char sci_num, unsigned char buffer)
-{
-
-  unsigned char *sci_pt;
-
-  if(!sci[sci_num].ena)
-    return(FALSE);
-  sci_pt = sci[sci_num].init_reg;
-  // Wait until Transmit Data Register is empty.
-  while(!(sci_pt[SCISR1]&0x80))
-    ;
-  // Send Buffer and clear TDRE flag  
-  sci_pt[SCIDRL] = buffer;
-  return(TRUE);
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// SCIGetBuffer
-// --------------------------------------------------------------------------------------
-// SCI Receive Data, True if the buffer has been received
-/////////////////////////////////////////////////////////////////////////////////////////
-Bool SCIGetBuffer(unsigned char sci_num, unsigned char *buffer)
-{
-
-  unsigned char *sci_pt;
-
-  if(!sci[sci_num].ena)
-    return(FALSE);
-  sci_pt = sci[sci_num].init_reg;
-  while(!(sci_pt[SCISR1] & 0x20));
-  // Get Buffer and clear RDRF flag
-  *buffer = sci_pt[SCISR1];
-  *buffer = sci_pt[SCIDRL];
-  return(TRUE);
-
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
-// SCICheckGetBuffer
-// --------------------------------------------------------------------------------------
-// SCI Check Receive Data, True if receiver data register (SCIDR) is full
-/////////////////////////////////////////////////////////////////////////////////////////
-Bool SCICheckGetBuffer(unsigned char sci_num)
-{
-
-  unsigned char *sci_pt;
-
-  if(!sci[sci_num].ena)
-    return(FALSE);
-  sci_pt = sci[sci_num].init_reg;
-  if(sci_pt[SCISR1]&0x20)
-    return(TRUE);
-  return(FALSE);
-
-}
 
 /////////////////////////////////////////////////////////////////////////////////////////
 // ConvertCharAscii
@@ -156,13 +172,26 @@ unsigned char ConvertCharAscii(unsigned char value)
 // --------------------------------------------------------------------------------------
 // Sends a char string on the SCI
 /////////////////////////////////////////////////////////////////////////////////////////
-void SendString(unsigned char SCI_PORT, char buf[30])
-{
-  int i; 
-   
-  for (i=0;buf[i]!='\0';i++)
-    (void)SCISendBuffer(SCI_PORT, buf[i]);
-  
+void SendString(char buffer[BUFFER_SIZE]){
+    unsigned int index;
+    
+    if(!sciTxAvailable)
+        return;
+    
+    // Set the transmit line busy
+    sciTxAvailable = FALSE;  
+
+    // Copy string to the buffer
+    for(index=0; buffer[index] !='\0'; index++){
+        sciTxBuffer[index] = buffer[index]; 
+    }
+    
+    // Configure time for Output Compare 0
+    TIM_TC0  = TIM_TCNT + SCI_TX_TIME;
+
+    // Disable Timer Interrupt Output Compare 0 
+    TIM_TIE_C0I  = TRUE; 
+      
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -170,14 +199,14 @@ void SendString(unsigned char SCI_PORT, char buf[30])
 // --------------------------------------------------------------------------------------
 // This function sends a two-digit hex value on the SCI
 /////////////////////////////////////////////////////////////////////////////////////////
-void SendHexValue(unsigned char SCI_PORT, unsigned char hex_value)
+void SendHexValue(unsigned char hex_value)
 {
   char hex_L, hex_H;
 
   hex_L = hex_value & 0x0F;
   hex_H = hex_value>>4;
-  (void)SCISendBuffer(SCI_PORT, ConvertCharAscii(hex_H));
-  (void)SCISendBuffer(SCI_PORT, ConvertCharAscii(hex_L));
-  SendString(SCI_PORT, "\r\n\0");
+  //(void)SCISendBuffer(ConvertCharAscii(hex_H));
+  //(void)SCISendBuffer(ConvertCharAscii(hex_L));
+  SendString("\r\n\0");
 }
 

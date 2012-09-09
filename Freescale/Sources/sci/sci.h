@@ -7,34 +7,51 @@
 // http://www.softecmicro.com/
 // 
 /////////////////////////////////////////////////////////////////////////////////////////
+
 #include <hidef.h>
 
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-#define SCI_0             0
-#define SCI_1             1
-#define SCI_BR            208
+// Setups the default times for pooling the serial ports.
+//
+// RX_TIME = BUS_CLK / (16 * Serial_Baud)  - 16x oversample bit time 
+// TX_TIME = BUS_CLK / Serial_Baud         - Actual bit time 
+/////////////////////////////////////////////////////////////////////////////////////////
+#define SCI_RX_TIME          208
+#define SCI_TX_TIME         3328
 
-#define SCIBDH            0x00
-#define SCIBDL            0x01
-#define SCICR1            0x02
-#define SCIASR1           0x00
-#define SCIACR1           0x01
-#define SCIACR2           0x02
-#define SCICR2            0x03
-#define SCISR1            0x04
-#define SCISR2            0x05
-#define SCIDRH            0x06
-#define SCIDRL            0x07
+#define RX_PIN         PORTA_PA4
+#define TX_PIN         PORTA_PA3
+
+#define BUFFER_SIZE           30
+
+    
+// Serial Port 0
+extern Bool sciRxReady;
+extern Bool sciRxOverflow;
+extern char sciRxBuffer[BUFFER_SIZE];
+extern unsigned int sciRxIndex;
+extern unsigned int sciRxStatus;
+
+extern Bool sciTxAvailable;
+extern char sciTxBuffer[BUFFER_SIZE];
+extern unsigned int sciTxIndex;
+extern unsigned int sciTxStatus;
 
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
-void SCIOpenCommunication(unsigned char sci_num);
-void SCICloseCommunication(unsigned char sci_num);
-Bool SCISendBuffer(unsigned char sci_num, unsigned char buffer);
-Bool SCIGetBuffer(unsigned char sci_num, unsigned char *buffer);
-Bool SCICheckGetBuffer(unsigned char sci_num);
+
+void TimerInit(void);
+void SCIOpenCommunication();
+void SCI_SetupTransmit();
+void SCI_SetupRecieve();
+
+//void SCICloseCommunication(unsigned char sci_num);
+//Bool SCISendBuffer(unsigned char sci_num, unsigned char buffer);
+//Bool SCIGetBuffer(unsigned char sci_num, unsigned char *buffer);
+//Bool SCICheckGetBuffer(unsigned char sci_num);
 
 unsigned char ConvertCharAscii(unsigned char value);
-void SendString(unsigned char SCI_PORT, char buf[30]);
-void SendHexValue(unsigned char SCI_PORT, unsigned char hex_value);
+void SendString(char buf[30]);
+void SendHexValue(unsigned char hex_value);
+
