@@ -1,0 +1,9 @@
+/********************************************
+*	---- Configure Timmer N' stuff ---		*
+*											*
+* Carrier Signal Period		: 	25us		*
+* Minimum Oscilation Time	:	600us		*
+* 
+********************************************/
+
+/* Define Communication Functions... Later */
