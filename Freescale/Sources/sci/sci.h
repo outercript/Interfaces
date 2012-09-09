@@ -14,11 +14,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 // Setups the default times for pooling the serial ports.
 //
-// RX_TIME = BUS_CLK / (16 * Serial_Baud)  - 16x oversample bit time 
-// TX_TIME = BUS_CLK / Serial_Baud         - Actual bit time 
+// POLL_TIME    = BUS_CLK / (16 * Serial_Baud)  - 16x oversample bit time 
+// BIT_TIME     = BUS_CLK / Serial_Baud         - Actual bit time 
 /////////////////////////////////////////////////////////////////////////////////////////
-#define SCI_RX_TIME          208
-#define SCI_TX_TIME         3328
+#define SCI_POLL_TIME         208
+#define SCI_BIT_TIME         3328
+#define SCI_HALF_TIME        1664
 
 #define RX_PIN         PORTA_PA4
 #define TX_PIN         PORTA_PA3

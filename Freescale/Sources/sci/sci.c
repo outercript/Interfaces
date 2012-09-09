@@ -22,7 +22,7 @@ interrupt VectorNumber_Vtimch0 void SerialTx_ISR(void){
     TIM_TFLG1 = TIM_TFLG1_C0F_MASK;
          
     // Setup default TX Time
-    TIM_TC0 = TIM_TCNT + SCI_TX_TIME;
+    TIM_TC0 = TIM_TCNT + SCI_BIT_TIME;
      
     // Debug!!!
     shift   = sciTxStatus;
@@ -126,7 +126,7 @@ void SCI_SetupRecieve(){
     TIM_TIOS_IOS1 = TRUE;   // Enable Output compare Port 0
     
     // Configure time for Output Compare 1
-    TIM_TC1  = TIM_TCNT + SCI_RX_TIME;
+    TIM_TC1  = TIM_TCNT + SCI_POLL_TIME;
     
     //Enable Timer Interrupt Output Compare 1 
     TIM_TIE_C1I  = TRUE;    
@@ -187,7 +187,7 @@ void SendString(char buffer[BUFFER_SIZE]){
     }
     
     // Configure time for Output Compare 0
-    TIM_TC0  = TIM_TCNT + SCI_TX_TIME;
+    TIM_TC0  = TIM_TCNT + SCI_BIT_TIME;
 
     // Enable Timer Interrupt Output Compare 0 
     TIM_TIE_C0I  = TRUE; 
