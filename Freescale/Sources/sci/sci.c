@@ -33,7 +33,7 @@ interrupt VectorNumber_Vtimch0 void SerialTx_ISR(void){
         sciTxAvailable  = TRUE; // Make Tx Available
         sciTxStatus     = 0;    // Reset Tx Status
         sciTxIndex      = 0;    // Reset Tx Buffer Index
-        TIM_TIE_C0I     = FALSE;   // Enable Output compare Port 0   
+        TIM_TIE_C0I     = FALSE;   // Disable Output compare Port 0   
         return;  
     }
     
@@ -189,7 +189,7 @@ void SendString(char buffer[BUFFER_SIZE]){
     // Configure time for Output Compare 0
     TIM_TC0  = TIM_TCNT + SCI_TX_TIME;
 
-    // Disable Timer Interrupt Output Compare 0 
+    // Enable Timer Interrupt Output Compare 0 
     TIM_TIE_C0I  = TRUE; 
       
 }
