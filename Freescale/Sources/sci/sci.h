@@ -13,6 +13,7 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 #define SCI_0             0
 #define SCI_1             1
+#define SCI_BR            208
 
 #define SCIBDH            0x00
 #define SCIBDL            0x01

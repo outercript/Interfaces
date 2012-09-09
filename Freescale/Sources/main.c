@@ -27,6 +27,7 @@ void PLLInit(void);
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
 interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
         TIM_TFLG1 = 0x01;
+        
         TIM_TC0 = TIM_TCNT + time;
         
         manuel ^= 1;         
@@ -63,7 +64,7 @@ interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
 void TimerInit(void){
 
     // setup Timer System Control Registers
-    TIM_TSCR1  = 0x80; // TSCR1 - Enable normal timer
+    TIM_TSCR1  = 0x90; // TSCR1 - Enable normal timer
     TIM_TSCR2  = 0x00; // TSCR2 - 0x80 Timer Interrupt Enable
     TIM_TSCR2 |= 0x00; // TSCR2 - 0x00 1 Prescaler
     
@@ -75,7 +76,6 @@ void TimerInit(void){
 void PeriphInit(void){
     DDRA  = 0x2F; // Configure A[5, 3..0] as outputs 
     PORTA = 0x00; // Output 0
-	
 
     SCIOpenCommunication(SCI_0); 
     sciRxReady = FALSE;
@@ -107,26 +107,36 @@ void main(void) {
     TimerInit();
     
     //Output Compare
-    TIM_TIOS = 0x01; //Enable Output compare Port 0
-    TIM_TIE  = 0x01; //Enable Timer Interrupt Output Compare 0
-    TIM_TC0  = TIM_TCNT + time; // Set a dummy time to generate interrupt
+    TIM_TIOS_IOS0 = TRUE;   // Enable Output compare Port 0
     
+    // Configure time for Output Compare 0
+    TIM_TC0  = TIM_TCNT + 10;
+    
+    //Enable Timer Interrupt Output Compare 0 
+    TIM_TIE_C0I  = TRUE; 
+     
     // SCI - 2 = Enable recieve interrupt, C = Enable Recieve/Transmit
     SCI0CR2 = 0x2C;
     PORTA = 0x00;
-    
+
     EnableInterrupts;
     
     for(;;) {
     
         if (manuel){
             PORTA_PA0 = 1;
+            count +=1;
         }
         
         else{
             PORTA_PA0 = 0;
         }
 
+        if (count > 65534){
+            
+            SendString(SCI_0, "Hola mundo\n\r\0");
+            count = 0;
+        }
         
     } /* loop forever */
   
