@@ -18,7 +18,7 @@ void PeriphInit(void);
 
 
 void PeriphInit(void){
-    DDRA  = 0xFF; // Configure Port A as output 
+    DDRA  = 0x0F; // Configure Port A as output 
     PORTA = 0x00; // Output 0
 }
 
@@ -38,6 +38,7 @@ void PLLInit(void){
 }
 
 void main(void) {
+    char buf[BUFFER_SIZE];
 	
     PLLInit();    
     PeriphInit();
@@ -46,6 +47,15 @@ void main(void) {
     SendString("Hola mundo!!\r\n\0");
     
     for(;;) {
+        if(sciRxReady == TRUE){
+            GetString(buf);
+            SendString(buf);
+        }
+        
+        if(sciRxOverflow){
+            PORTA_PA0 = 1;
+        }
+        
         count = 0;      
     } /* loop forever */
   

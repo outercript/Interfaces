@@ -24,12 +24,14 @@
 #define RX_PIN         PORTA_PA4
 #define TX_PIN         PORTA_PA3
 
-#define BUFFER_SIZE           30
+#define BUFFER_SIZE           50
 
     
 // Serial Port 0
 extern Bool sciRxReady;
 extern Bool sciRxOverflow;
+extern Bool sciRxBadStart;
+extern Bool sciRxBadStop;
 extern char sciRxBuffer[BUFFER_SIZE];
 extern unsigned int sciRxIndex;
 extern unsigned int sciRxStatus;
