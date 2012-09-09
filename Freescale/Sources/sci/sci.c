@@ -40,8 +40,8 @@ void SCIOpenCommunication(unsigned char sci_num)
   sci[sci_num].ena = TRUE;
   sci_pt = sci[sci_num].init_reg;
   // Set Baud Rate Modulo Divisor
-  sci_pt[SCIBDH] = (unsigned char)(13 >> 8);
-  sci_pt[SCIBDL] = (unsigned char)13;
+  sci_pt[SCIBDH] = (unsigned char)(SCI_BR >> 8);
+  sci_pt[SCIBDL] = (unsigned char)SCI_BR;
   // Trasmitter and Receiver Enable
   sci_pt[SCICR2] = 0x2C;
   
