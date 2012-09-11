@@ -1,6 +1,9 @@
 #include <hidef.h>      /* common defines and macros */
 #include <stdio.h>
 #include <MC9S12XEP100.h>     /* derivative-specific definitions */
+
+#include <string.h>
+
 #include "sci.h"
 
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
@@ -74,7 +77,7 @@ void TimerInit(void){
 
 
 void PeriphInit(void){
-    DDRA  = 0x2F; // Configure A[5, 3..0] as outputs 
+    DDRA  = 0xFF; // Configure A[5, 3..0] as outputs 
     PORTA = 0x00; // Output 0
 
     SCIOpenCommunication(SCI_0); 
@@ -123,19 +126,44 @@ void main(void) {
     
     for(;;) {
     
-        if (manuel){
-            PORTA_PA0 = 1;
-            count +=1;
+		if(sciRxReady) {
+            count = strcmp(sciRxBuffer, "Sudo!!");
+		
+            if(!count){
+                PORTA_PA0 = 1;
+                TIM_TIE_C0I  = FALSE;
+            }
+            
+            else{
+                PORTA_PA0 = 0;
+                TIM_TIE_C0I  = TRUE;
+            }
+            
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            sciRxIndex = 0;
+            sciRxReady = FALSE;
+        }
+	 	
+
+        if(sciRxOverflow) {
+            PORTA_PA1 = 1;
+            SendString(SCI_0, "Buffer overflow!\r\n\0");
+            SendString(SCI_0, "Erasing buffer!\r\n\0");
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            sciRxIndex = 0;
+            sciRxOverflow = FALSE;
         }
         
         else{
-            PORTA_PA0 = 0;
+            PORTA_PA1 = 0;
         }
 
-        if (count > 65534){
-            
-            SendString(SCI_0, "Hola mundo\n\r\0");
-            count = 0;
+        if (manuel){
+            PORTA_PA3 = 1;
+        }
+        
+        else{
+            PORTA_PA3 = 0;
         }
         
     } /* loop forever */
