@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "sci.h"
+#include "ir.h"
 
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
@@ -14,8 +15,6 @@ const unsigned char flash_security  @0xFF0F = 0xFE;
 volatile unsigned int x;
 volatile unsigned int count;
 volatile unsigned int time;
-
-volatile Bool manuel;
 
 // Serial Port 0
 Bool sciRxReady;
@@ -28,12 +27,26 @@ void PLLInit(void);
 
 /* Start interrupts */  
 #pragma CODE_SEG __NEAR_SEG NON_BANKED
-interrupt VectorNumber_Vtimch0 void TimerOverflow_ISR(void){
-        TIM_TFLG1 = 0x01;
+
+interrupt VectorNumber_Vtimch0 void Carrier_ISR(void){
         
-        TIM_TC0 = TIM_TCNT + time;
-        
-        manuel ^= 1;         
+    // Clear Interrupt Flag 
+    TIM_TFLG1 |= TIM_TFLG1_C0F_MASK;
+
+    // Setup Output Compare Time        
+    TIM_TC0 = TIM_TCNT + CARRIER_TIME;
+
+    // Toggle!!
+    toggle ^= 1;
+
+    // Output the result =)
+    if(toggle){
+        IR_PORT = TRUE;
+    }
+     
+    else{
+        IR_PORT = FALSE;
+    } 
 }
 
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
@@ -72,7 +85,7 @@ void TimerInit(void){
     TIM_TSCR2 |= 0x00; // TSCR2 - 0x00 1 Prescaler
     
     TIM_PACTL  = 0x00; // Setup Timer Preset  
-    //TIM_TFLG2 = 0x80; // Borra el flag de Interrupcion
+
 }
 
 
@@ -84,6 +97,9 @@ void PeriphInit(void){
     sciRxReady = FALSE;
     sciRxOverflow = FALSE;
     sciRxIndex = 0;
+    
+    // SCI - 2 = Enable recieve interrupt, C = Enable Recieve/Transmit
+    SCI0CR2 = 0x2C;
 }
 
 void PLLInit(void){
@@ -101,26 +117,12 @@ void PLLInit(void){
 }
 
 void main(void) {
-    manuel = 0;
     count = 0;
-	time = 402;
 	
     PLLInit();    
     PeriphInit();
     TimerInit();
-    
-    //Output Compare
-    TIM_TIOS_IOS0 = TRUE;   // Enable Output compare Port 0
-    
-    // Configure time for Output Compare 0
-    TIM_TC0  = TIM_TCNT + 10;
-    
-    //Enable Timer Interrupt Output Compare 0 
-    TIM_TIE_C0I  = TRUE; 
-     
-    // SCI - 2 = Enable recieve interrupt, C = Enable Recieve/Transmit
-    SCI0CR2 = 0x2C;
-    PORTA = 0x00;
+    Setup_IR();
 
     EnableInterrupts;
     
@@ -156,14 +158,6 @@ void main(void) {
         
         else{
             PORTA_PA1 = 0;
-        }
-
-        if (manuel){
-            PORTA_PA3 = 1;
-        }
-        
-        else{
-            PORTA_PA3 = 0;
         }
         
     } /* loop forever */
