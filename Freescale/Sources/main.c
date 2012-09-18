@@ -49,6 +49,7 @@ interrupt VectorNumber_Vtimch0 void Carrier_ISR(void){
     } 
 }
 
+
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
     
     if(sciRxReady) 
@@ -129,9 +130,10 @@ void main(void) {
     for(;;) {
     
 		if(sciRxReady) {
-            count = strcmp(sciRxBuffer, "Sudo!!");
-		
-            if(!count){
+            
+		    rawSend(sciRxBuffer);
+/*
+            if(sciRxBuffer == 'S'){
                 PORTA_PA0 = 1;
                 TIM_TIE_C0I  = FALSE;
             }
@@ -140,7 +142,7 @@ void main(void) {
                 PORTA_PA0 = 0;
                 TIM_TIE_C0I  = TRUE;
             }
-            
+*/            
             (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
             sciRxIndex = 0;
             sciRxReady = FALSE;

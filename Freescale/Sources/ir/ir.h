@@ -13,6 +13,9 @@
 #define CARRIER_TIME 402
 
 extern Bool toggle;
+extern unsigned int ir_count;
+extern unsigned int ir_limit;
+
 
 void Setup_IR();
 
