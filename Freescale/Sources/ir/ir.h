@@ -11,10 +11,15 @@
 
 #define IR_PORT PORTA_PA3
 #define CARRIER_TIME 402
+#define CONTROLER_TIME 1280
 
-extern Bool toggle;
-extern unsigned int ir_count;
-extern unsigned int ir_limit;
+extern Bool sendingBit;
+extern Bool ControlStatus;
+extern unsigned int ir_pulseCount;
+extern unsigned int ir_idleCount;
+extern unsigned int ControlCount;
+
+
 
 
 void Setup_IR();

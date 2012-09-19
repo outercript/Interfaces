@@ -49,6 +49,29 @@ interrupt VectorNumber_Vtimch0 void Carrier_ISR(void){
     } 
 }
 
+interrupt VectorNumber_Vtimch1 void IR_Controler(void){
+        
+    // Clear Interrupt Flag 
+    TIM_TFLG1 |= TIM_TFLG1_C1F_MASK;
+
+    // Setup Output Compare Time        
+    TIM_TC1 = TIM_TCNT + CONTROLER_TIME;
+
+    // Output the result =)
+    if(ControlCount == ir_pulseCount && !ControlStatus){
+        ControlCount=0;
+		ControlStatus=1;
+        TIM_TIE_C0I = FALSE;
+    }
+     
+    else if(ControlCount == ir_pulseCount && ControlStatus){
+		ControlCount=0;
+		sendingBit = 0;
+        IR_PORT = FALSE;
+    }
+	ControlCount++;	
+}
+
 
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
     
@@ -132,17 +155,7 @@ void main(void) {
 		if(sciRxReady) {
             
 		    rawSend(sciRxBuffer);
-/*
-            if(sciRxBuffer == 'S'){
-                PORTA_PA0 = 1;
-                TIM_TIE_C0I  = FALSE;
-            }
             
-            else{
-                PORTA_PA0 = 0;
-                TIM_TIE_C0I  = TRUE;
-            }
-*/            
             (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
             sciRxIndex = 0;
             sciRxReady = FALSE;
