@@ -19,7 +19,7 @@ volatile unsigned int time;
 // Serial Port 0
 Bool sciRxReady;
 Bool sciRxOverflow;
-char sciRxBuffer[30];
+unsigned char sciRxBuffer[30];
 unsigned int sciRxIndex;
 
 void TimerInit(void);
@@ -50,6 +50,8 @@ interrupt VectorNumber_Vtimch0 void Carrier_ISR(void){
 }
 
 interrupt VectorNumber_Vtimch1 void IR_Controler(void){
+    volatile unsigned int temp;
+    temp = ControlCount;
         
     // Clear Interrupt Flag 
     TIM_TFLG1 |= TIM_TFLG1_C1F_MASK;
@@ -57,19 +59,27 @@ interrupt VectorNumber_Vtimch1 void IR_Controler(void){
     // Setup Output Compare Time        
     TIM_TC1 = TIM_TCNT + CONTROLER_TIME;
 
-    // Output the result =)
+    // Carrier output true
     if(ControlCount == ir_pulseCount && !ControlStatus){
         ControlCount=0;
 		ControlStatus=1;
+		IR_PORT = FALSE;
         TIM_TIE_C0I = FALSE;
     }
-     
-    else if(ControlCount == ir_pulseCount && ControlStatus){
-		ControlCount=0;
+    
+    // Carrier output false 
+    else if(ControlCount == ir_idleCount && ControlStatus){
+		ControlCount = 0;
+        ControlStatus = 0;
 		sendingBit = 0;
         IR_PORT = FALSE;
+        TIM_TIE_C1I = FALSE;
     }
-	ControlCount++;	
+    
+    else{
+        ControlCount++;
+    }
+		
 }
 
 
@@ -153,12 +163,13 @@ void main(void) {
     for(;;) {
     
 		if(sciRxReady) {
-            
+            SCICloseCommunication(SCI_0);
 		    rawSend(sciRxBuffer);
             
             (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
             sciRxIndex = 0;
             sciRxReady = FALSE;
+            SCIOpenCommunication(SCI_0);
         }
 	 	
 
