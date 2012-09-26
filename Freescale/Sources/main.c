@@ -6,6 +6,7 @@
 
 #include "sci.h"
 #include "ir.h"
+#include "i2c.h"
 
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
@@ -15,6 +16,7 @@ const unsigned char flash_security  @0xFF0F = 0xFE;
 volatile unsigned int x;
 volatile unsigned int count;
 volatile unsigned int time;
+volatile unsigned int I2C_count;
 
 // Serial Port 0
 Bool sciRxReady;
@@ -80,6 +82,19 @@ interrupt VectorNumber_Vtimch1 void IR_Controler(void){
         ControlCount++;
     }
 		
+}
+
+interrupt VectorNumber_Vtimch2 void I2C_Timer(void){
+    //volatile unsigned int temp;
+    //temp = ControlCount;
+        
+    // Clear Interrupt Flag 
+    TIM_TFLG2 |= TIM_TFLG1_C2F_MASK;
+
+    // Setup Output Compare Time        
+    TIM_TC2 = TIM_TCNT + I2C_HALF_TIME;
+
+    delayFlag=FALSE;	
 }
 
 
