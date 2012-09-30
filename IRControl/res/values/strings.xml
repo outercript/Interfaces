@@ -1,0 +1,9 @@
+<resources>
+
+    <string name="app_name">Interfaces</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="TV_estado">Power On</string><string name="title_activity_main">MainActivity</string>
+    
+
+</resources>

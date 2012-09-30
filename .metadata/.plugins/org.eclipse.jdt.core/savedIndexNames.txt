@@ -1,0 +1,4 @@
+INDEX VERSION 1.126+C:\Users\OScar\Documents\Interfaces\.metadata\.plugins\org.eclipse.jdt.core
+2792668119.index
+3751383912.index
+4038163858.index
