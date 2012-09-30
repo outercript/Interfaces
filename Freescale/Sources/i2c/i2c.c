@@ -19,6 +19,7 @@ void Setup_I2C(void){
 
    void IIC_start_bit (void)
    {
+      ErrorFlag=0;
       SCL=0;
       SDA=1;
       SCL=1;
@@ -44,21 +45,26 @@ void Setup_I2C(void){
    }
 
 
-void I2C_wait(Bool IS_FULL_Time) 
-{
-    if(IS_FULL_Time) 
-    {
-         TIM_TC2     = TIM_TCNT + I2C_FULL_TIME;    
-    } 
-    else{
-         TIM_TC2     = TIM_TCNT + I2C_HALF_TIME;
-    }
-    
-    TIM_TIE_C2I = TRUE;
-    delayFlag=1;
-    while(delayFlag);
-    
-}
+  void I2C_wait(Bool IS_FULL_Time) 
+  {
+      if(IS_FULL_Time) 
+      {
+           TIM_TC2     = TIM_TCNT + I2C_FULL_TIME;    
+      } 
+      else{
+           TIM_TC2     = TIM_TCNT + I2C_HALF_TIME;
+      }
+      
+      TIM_TIE_C2I = TRUE;
+      delayFlag=1;
+      while(delayFlag);
+      
+  }
+  
+  void error(void){
+      ErrorFlag=1;
+  }
+
 
 /*****************************************************************************/
 /*                           Send Byte                        */
@@ -96,7 +102,7 @@ void I2C_wait(Bool IS_FULL_Time)
 
       SCL=0;
       //SDA direccion como entrada
-      DDRA = 0xBF;  //SDA = bit 7
+      DDRB = 0x01;  //SDA = bit 1 del puerto B
       I2C_wait(1); 
       SCL=1;
       I2C_wait(0);
@@ -120,7 +126,7 @@ void I2C_wait(Bool IS_FULL_Time)
       SCL=0;
       I2C_wait(0);
       //SDA direccion salida
-      DDRA = 0xFF;
+      DDRB = 0x03;
       SDA=1;
       I2C_wait(0); // Wait TR time from manual
       SCL=1;
@@ -137,11 +143,14 @@ void I2C_wait(Bool IS_FULL_Time)
    void IIC_SEND_ACK (void)
    {
       SCL=0;
+      I2C_wait(0); 
       //SDA direccion salida
+      DDRB = 0x03;
       SDA=0;
+      I2C_wait(0); 
       // Wait TR time from manual
       SCL=1;
-      // Wait clock high time
+      I2C_wait(1); 
       SCL=0;
       // Wait TR time
    }
@@ -155,14 +164,11 @@ void I2C_wait(Bool IS_FULL_Time)
 /*                        Byte Write                           */
 /***************************************************************************/
 
-   void IIC_byte_write (unsigned int direccion, unsigned char dato)
+   void IIC_byte_write (unsigned char direccion, unsigned char dato)
    {
-      IIC_start_bit();
-      //IIC_send_byte(0xA0);                  // suponiendo una sola memoria A2=A1=A0=0
-      IIC_send_byte(0xA0 | ((direccion>>13)<<1)); // selección de A2,A1,A0 y WB=0
+      IIC_start_bit();         // suponiendo una sola memoria A2=A1=A0=0
+      IIC_send_byte(0xA0);     // selección de A2,A1,A0 y WB=0
       if (IIC_ACK()) error();
-      IIC_send_byte(direccion>>8);             // 5 bits más significativos
-      if (IIC_ACK()) error();                  // de dirección (13 en total)
       IIC_send_byte(direccion);
       if (IIC_ACK()) error();
       IIC_send_byte(dato);
@@ -175,19 +181,16 @@ void I2C_wait(Bool IS_FULL_Time)
 /*                        Page Write                           */
 /***************************************************************************/
 
-   void IIC_page_write (unsigned int direccion, unsigned char datos[32]){
+   void IIC_page_write (unsigned int direccion, unsigned char datos[8]){
       volatile unsigned char i;
       
-      IIC_start_bit();
-      //IIC_send_byte(0xA0);                  // suponiendo una sola memoria A2=A1=A0=0
-      IIC_send_byte(0xA0 | ((direccion>>13)<<1)); // selección de A2,A1,A0 y WB=0
-      if (IIC_ACK()) error();
-      IIC_send_byte(direccion>>8);             // 5 bits más significativos
-      if (IIC_ACK()) error();                  // de dirección (13 en total)
+      IIC_start_bit();             // suponiendo una sola memoria A2=A1=A0=0
+      IIC_send_byte(0xA0);        // selección de A2,A1,A0 y WB=0
+      if (IIC_ACK()) error();     // de dirección (13 en total)
       IIC_send_byte(direccion);
       if (IIC_ACK()) error();
 
-      for (i=0; i<32 ; i++)               // Send page of 32 bytes
+      for (i=0; i<8; i++)               // Send page of 32 bytes
       {
          IIC_send_byte(datos[i]);
          if (IIC_ACK()) error();
@@ -212,15 +215,17 @@ void I2C_wait(Bool IS_FULL_Time)
       
       contador=8;
       SCL=0;
-      
+      I2C_wait(1);
       // SDA direccion como entrada
-      
       do
       {
          SCL=1;
+         I2C_wait(0);
          if (SDA) temp=(temp<<1)|0x01;   // Store bit and shift left
          else temp<<=1;
+         I2C_wait(0);
          SCL=0;
+         I2C_wait(1);
       }while(contador--);
       
       // SDA direccion salida
@@ -259,18 +264,15 @@ void I2C_wait(Bool IS_FULL_Time)
 /*                     Random Address Read                        */
 /***************************************************************************/
 
-   unsigned char IIC_random_read (unsigned int direccion)
+   unsigned char IIC_random_read (unsigned char direccion)
    {   
    
    /* Set random address by a write attempt */
       IIC_start_bit();
-   
-      IIC_send_byte(0xA0 | ((direccion>>13)<<1)); // selección de A2,A1,A0 y WB=0
+      IIC_send_byte(0xA0); // selección de A2,A1,A0 y WB=0
       if (IIC_ACK()) error();
-      IIC_send_byte(direccion>>8);             // 5 bits más significativos
-      if (IIC_ACK()) error();                  // de dirección (13 en total)
-      IIC_send_byte(direccion); 
-      if (IIC_ACK()) error();
+      IIC_send_byte(direccion);             // 5 bits más significativos
+      if (IIC_ACK()) error();               // de dirección (13 en total)
    
    /* Read current random address */
       return IIC_current_address_read(direccion);
@@ -288,7 +290,7 @@ void I2C_wait(Bool IS_FULL_Time)
       IIC_start_bit();
       
    /* Control Byte */
-      IIC_send_byte(0xA1 | ((direccion>>13)<<1)); // selección de A2,A1,A0 y WB=1
+      IIC_send_byte(0xA1); // selección de A2,A1,A0 y WB=1
       if (IIC_ACK()) error();
       
    /* Read Bytes */
