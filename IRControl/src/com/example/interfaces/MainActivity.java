@@ -26,6 +26,7 @@ public class MainActivity extends Activity
 	  private ToggleButton Power, MUTE;
 	  private Button CHDW,CHUP,VUP,VDW,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
 	  private String Television = "Sony";
+	  private String last_cmd = "";
 	  
 ////////////////////
 //****BluShit****//
@@ -158,6 +159,7 @@ public class MainActivity extends Activity
         try {
                 btSocket.connect();
                 Log.e(TAG, "ON RESUME: BT connection established, data transfer link open.");
+                
         } catch (IOException e) {
                 try {
                         btSocket.close();
@@ -176,14 +178,6 @@ public class MainActivity extends Activity
         } catch (IOException e) {
                 Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
         }
-        //Hello message to start conversation.//
-        /*/String message = "Hello message from client to server.\r\n";
-       // byte[] msgBuffer = message.getBytes();
-        try {
-               // outStream.write(msgBuffer);
-        } catch (IOException e) {
-                Log.e(TAG, "ON RESUME: Exception during write.", e);
-        }*/
 }
     
 @Override
@@ -235,6 +229,22 @@ public class MainActivity extends Activity
 		// Send the command to the BT Terminal
 		Log.e("Command", cmd);	
 		BT_sendString(cmd);
+		
+		if (cmd != last_cmd){
+			for(int i=0; i<2; i++){
+				// Wait until first comand was send
+				try {
+					Thread.sleep(75);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				
+				// Send again the command
+				BT_sendString(cmd);
+			}
+		}
+		
+		last_cmd = cmd;
 	}
 	
 	public void BT_sendString(String message){
