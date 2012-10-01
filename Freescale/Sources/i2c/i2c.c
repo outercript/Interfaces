@@ -19,46 +19,63 @@ void Setup_I2C(void){
 
    void IIC_start_bit (void)
    {
+      // Set error flag to zero to monitor a frame error
       ErrorFlag=0;
-      SCL=0;
+      
+      // Set both outputs in high level
       SDA=1;
+      //wait 2.5 us
+      I2C_wait(0);
+      
+      /* Generate Start Bit Condition */
       SCL=1;
-      //esperar 5000 ns
+      //wait 5 us
       I2C_wait(1);
       SDA=0;
-      //esperar 5000 ns
+      //wait 5 us
       I2C_wait(1);
       SCL=0;
+      
+      /* Leave both at zero */
    }
 
    void IIC_stop_bit (void)
    {
+      // Force clock to zero and wait first half bit time
       SCL=0;
+      I2C_wait(0);
+      
+      // Set SDA to zero and wait second half bit time
       SDA=0;
       I2C_wait(0);
+      
+      /* Generate Stop Condition */
       SCL=1;
       I2C_wait(1);
       SDA=1;
       I2C_wait(1);
-      SCL=0;
-      SDA=0;
+      
+      /* Leave Both at High level*/
    }
 
 
   void I2C_wait(Bool IS_FULL_Time) 
   {
-      if(IS_FULL_Time) 
-      {
+      // Wait 5 us
+      if(IS_FULL_Time){
            TIM_TC2     = TIM_TCNT + I2C_FULL_TIME;    
-      } 
+      }
+      // Wait 2.5 us 
       else{
            TIM_TC2     = TIM_TCNT + I2C_HALF_TIME;
       }
       
+      // Enable the timer interruption
       TIM_TIE_C2I = TRUE;
       delayFlag=1;
-      while(delayFlag);
       
+      // Wait until the interruption sets the flag to zero
+      while(delayFlag);
   }
   
   void error(void){
@@ -74,20 +91,36 @@ void Setup_I2C(void){
    {
       volatile unsigned char contador;
       volatile unsigned char temp;
+      
       temp=dato;
       contador=8;
 
       do{
-         SCL=0;
-         I2C_wait(0);
-         if (temp&0x80) SDA=1;      // Send the most significant bit
-         else SDA=0;               // and shift left for the next bit
-         I2C_wait(0);
-         SCL=1;
-         temp<<=1;
-         I2C_wait(0);
+          // Set clock to zero and wait first half bit time
+          SCL=0;
+          I2C_wait(0);
+          
+          // Send the most significant bit
+          if(temp&0x80){
+              SDA=1;     
+          }
+          else{
+              SDA=0;
+          }
+          
+          // Shift left to send the next bit
+          temp<<=1;
+          
+          // Wait second half bit time
+          I2C_wait(0);
+          
+          // Set clock to high and wait full bit time
+          SCL=1;
+          I2C_wait(1);
 
       }while (--contador);
+      
+      // Set clock to zero
       SCL=0;
    }
 
@@ -99,20 +132,31 @@ void Setup_I2C(void){
    Bool IIC_ACK (void)
    {
       volatile Bool temp;
-
       SCL=0;
-      //SDA direccion como entrada
+      
+      // Set SDA as input
       DDRB = 0x01;  //SDA = bit 1 del puerto B
-      I2C_wait(1); 
+      I2C_wait(1);
+      
+      // Set Clock to high and wait first half bit time 
       SCL=1;
       I2C_wait(0);
-      if (SDA) temp=1;
-      else temp=0;
+      
+      // Read data from the slave 
+      if(SDA){
+          temp=1;
+      }else{
+          temp=0;
+      }
+      
+      // Wait second half bit time and set clock to zero
       I2C_wait(0);
       SCL=0;
-      //SDA direccion salida
-      DDRA = 0xFF;
-      SDA = 0;
+      
+      // Set SDA as output
+      DDRA = 0x03;
+      SDA  = 0;
+      
       return temp;
    }
 
@@ -123,14 +167,20 @@ void Setup_I2C(void){
 
    void IIC_NO_ACK (void)
    {
+      // Force clock to zero and wait first half bit time
       SCL=0;
       I2C_wait(0);
-      //SDA direccion salida
+      
+      // Set SDA as output and wait second half bit time
       DDRB = 0x03;
       SDA=1;
-      I2C_wait(0); // Wait TR time from manual
+      I2C_wait(0);
+      
+      // Raise clock full bit time so the SDA can be read by the slave 
       SCL=1;
-      I2C_wait(1); // Wait clock high time
+      I2C_wait(1);
+      
+      // Set both outputs to zero
       SCL=0;
       SDA=0;
    }
@@ -143,16 +193,27 @@ void Setup_I2C(void){
    void IIC_SEND_ACK (void)
    {
       SCL=0;
+      
+      //wait half bit
       I2C_wait(0); 
+      
       //SDA direccion salida
       DDRB = 0x03;
+      
+      //Change SDA data while clock is down
       SDA=0;
-      I2C_wait(0); 
-      // Wait TR time from manual
+      
+      //wait second half bit
+      I2C_wait(0);
+      
+      //Raise clock to publish data
       SCL=1;
+      
+      //wait full bit time for clock
       I2C_wait(1); 
+      
+      //set clock to zero
       SCL=0;
-      // Wait TR time
    }
 
 
@@ -166,13 +227,29 @@ void Setup_I2C(void){
 
    void IIC_byte_write (unsigned char direccion, unsigned char dato)
    {
-      IIC_start_bit();         // suponiendo una sola memoria A2=A1=A0=0
-      IIC_send_byte(0xA0);     // selección de A2,A1,A0 y WB=0
-      if (IIC_ACK()) error();
+      // Initiate frame
+      IIC_start_bit();
+      
+      // Controling only one device A2=A1=A0=0
+      // Sending Control bits and default device address to zero
+      IIC_send_byte(0xA0);     
+      
+      // wait for acknowledge from slave 
+      if (IIC_ACK()){ error(); }
+      
+      // Send memory address to write      
       IIC_send_byte(direccion);
-      if (IIC_ACK()) error();
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()){ error(); }
+      
+      // Send data byte
       IIC_send_byte(dato);
-      if (IIC_ACK()) error();
+      
+      // Expect an acknowledge
+      if (IIC_ACK()){ error(); }
+      
+      // End frame
       IIC_stop_bit();
    }
 
@@ -181,21 +258,34 @@ void Setup_I2C(void){
 /*                        Page Write                           */
 /***************************************************************************/
 
-   void IIC_page_write (unsigned int direccion, unsigned char datos[8]){
+   void IIC_page_write (unsigned char direccion, unsigned char datos[8]){
       volatile unsigned char i;
       
-      IIC_start_bit();             // suponiendo una sola memoria A2=A1=A0=0
-      IIC_send_byte(0xA0);        // selección de A2,A1,A0 y WB=0
-      if (IIC_ACK()) error();     // de dirección (13 en total)
-      IIC_send_byte(direccion);
-      if (IIC_ACK()) error();
+      // Initiate frame
+      IIC_start_bit();
+      
+      // Controling only one device ( A2=A1=A0=0, WB=0 )
+      IIC_send_byte(0xA0);
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()) { error(); }
 
-      for (i=0; i<8; i++)               // Send page of 32 bytes
-      {
+      // Send memory address to start writing
+      IIC_send_byte(direccion);
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()){ error(); }
+      
+      // Send page of 8 bytes
+      for (i=0; i<8; i++){      
+         // Send data byte
          IIC_send_byte(datos[i]);
-         if (IIC_ACK()) error();
+           
+         // Send page of 8 bytes
+         if (IIC_ACK()){ error(); }
       }
 
+      // End frame
       IIC_stop_bit();
    }
 
@@ -214,21 +304,55 @@ void Setup_I2C(void){
       unsigned char temp;
       
       contador=8;
+      
+      // Set clock to zero to allow SDA changes
       SCL=0;
-      I2C_wait(1);
-      // SDA direccion como entrada
+      
+      // Wait half bit time to start changes on SDA
+      I2C_wait(0);
+      
+      // Set SDA pin as Input and leave SCL as output
+      DDRB = 0x01;  //SDA = second bit of port B  ( 0 = input, 1 = output)
+      
       do
       {
-         SCL=1;
-         I2C_wait(0);
-         if (SDA) temp=(temp<<1)|0x01;   // Store bit and shift left
-         else temp<<=1;
-         I2C_wait(0);
-         SCL=0;
-         I2C_wait(1);
+          // Wait the second half bit time before raising the clock
+          I2C_wait(0);
+          
+          // Raise clock so the SDA input can be read
+          SCL=1;
+          
+          // Wait first half bit time to store the input value
+          I2C_wait(0);
+          
+          // Store bit and shift left
+          if (SDA){
+              temp=(temp<<1)|0x01;   
+          }else{
+              temp<<=1;
+          }
+          
+          // Wait second half bit time
+          I2C_wait(0);
+          
+          // Set clock to zero
+          SCL=0;
+          
+          // Wait first half bit time
+          I2C_wait(0);
+          
       }while(contador--);
       
-      // SDA direccion salida
+      // Set SDA and SCL as Output  ( 0 = input, 1 = output)
+      // SDA and SCL = Second and First bits respectively of Port B
+      DDRB = 0x03;
+      
+      // Set SDA to zero by default
+      SDA=0;
+      
+      // Wait second half bit time
+      I2C_wait(0);
+      
       return temp;
    }
 
@@ -238,21 +362,26 @@ void Setup_I2C(void){
 /*                     Current Address Read                     */
 /***************************************************************************/
 
-   unsigned char IIC_current_address_read (unsigned int direccion)
+   unsigned char IIC_current_address_read (void)
    {
       unsigned char buffer;
       
+      // Initiate frame
       IIC_start_bit();
       
-   /* Control Byte */
-      IIC_send_byte(0xA1 | ((direccion>>13)<<1)); // selección de A2,A1,A0 y WB=1
-      if (IIC_ACK()) error();
+      // Controling only one device ( A2=A1=A0=0, WB=1 )
+      IIC_send_byte(0xA1);
       
-   /* Read Byte */
-      buffer=read_byte();
+      // Expect an acknowledge from slave
+      if (IIC_ACK()){ error(); }
       
-   /* End Communication */
-      IIC_NO_ACK();                        // There should not be an ACK 
+      // Read Byte From Slave Device
+      buffer = read_byte();
+      
+      // Send a negative acknowledge to end communication
+      IIC_NO_ACK();
+      
+      // End communication
       IIC_stop_bit();
    
       return buffer;
@@ -266,41 +395,58 @@ void Setup_I2C(void){
 
    unsigned char IIC_random_read (unsigned char direccion)
    {   
-   
-   /* Set random address by a write attempt */
+      /* Set random address by a write attempt */
+      
+      // Start Frame
       IIC_start_bit();
-      IIC_send_byte(0xA0); // selección de A2,A1,A0 y WB=0
-      if (IIC_ACK()) error();
-      IIC_send_byte(direccion);             // 5 bits más significativos
-      if (IIC_ACK()) error();               // de dirección (13 en total)
+      
+      // Controling only one device ( A2=A1=A0=0, WB=0 )
+      IIC_send_byte(0xA0);
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()) { error(); }
+      
+      /* Set Memory address pointer to the desired address*/
+      IIC_send_byte(direccion);
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()) { error(); }
    
-   /* Read current random address */
-      return IIC_current_address_read(direccion);
+      // Read current random address and return the data
+      return IIC_current_address_read();
    }
-
-
+   
 
 /*****************************************************************************/
 /*                     Sequential Read                           */
 /***************************************************************************/
 
-   void IIC_sequential_read (unsigned int direccion, unsigned char *data)
+   void IIC_sequential_read (unsigned char direccion, unsigned char data[8])
    {
       volatile unsigned char i;
+      
+      // Start Frame
       IIC_start_bit();
       
-   /* Control Byte */
-      IIC_send_byte(0xA1); // selección de A2,A1,A0 y WB=1
-      if (IIC_ACK()) error();
+      // Controling only one device ( A2=A1=A0=0, WB=1 )
+      IIC_send_byte(0xA1);
       
-   /* Read Bytes */
+      // Expect an acknowledge from slave
+      if (IIC_ACK()) { error(); }
+      
+      /* Read Bytes */
       for (i=0; i<sizeof(data); i++)
       {
-         data[i]=read_byte();
-         if ( i<(sizeof(data)-1) ) IIC_SEND_ACK();   // Send ACK
+          // Read Byte From Slave
+          data[i]=read_byte();
+          
+          // Keep sending acknowledges after all bytes but the last one
+          if ( i<(sizeof(data)-1) ){
+              IIC_SEND_ACK();
+          }
       }
       
-   /* End Communication */
+      /* End Communication */
       IIC_NO_ACK();
       IIC_stop_bit();
    }
