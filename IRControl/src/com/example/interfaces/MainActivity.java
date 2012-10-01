@@ -13,6 +13,7 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Toast;
 import android.widget.Button;
@@ -20,10 +21,11 @@ import android.widget.ToggleButton;
 import android.util.Log;
 
 
-public class MainActivity extends Activity 
+public class MainActivity extends Activity
 {
 	  private ToggleButton Power, MUTE;
 	  private Button CHDW,CHUP,VUP,VDW,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
+	  private String Television = "Sony";
 	  
 ////////////////////
 //****BluShit****//
@@ -34,11 +36,11 @@ public class MainActivity extends Activity
       private BluetoothAdapter mBluetoothAdapter = null;
       private BluetoothSocket btSocket = null;
       private OutputStream outStream = null;
+      
       // Well known SPP UUID (will *probably* map to
       // RFCOMM channel 1 (default) if not in use);
       // see comments in onResume().
-      private static final UUID MY_UUID = 
-                      UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+      private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
       // ==> hardcode your server's MAC address here <==
       private static String address = "00:12:08:01:93:26";
@@ -53,32 +55,53 @@ public class MainActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         
+    	Power = (ToggleButton) findViewById(R.id.Power);
+    	MUTE = (ToggleButton) findViewById(R.id.MUTE);
+    	CHUP = (Button) findViewById(R.id.CHUP);
+    	CHDW = (Button) findViewById(R.id.CHDW);
+    	VUP = (Button) findViewById(R.id.VUP);
+    	VDW = (Button) findViewById(R.id.VDW);
+    	B_0 = (Button) findViewById(R.id.B_0);
+    	B_1 = (Button) findViewById(R.id.B_1);
+    	B_2 = (Button) findViewById(R.id.B_2);
+    	B_3 = (Button) findViewById(R.id.B_3);
+    	B_4 = (Button) findViewById(R.id.B_4);
+    	B_5 = (Button) findViewById(R.id.B_5);
+    	B_6 = (Button) findViewById(R.id.B_6);
+    	B_7 = (Button) findViewById(R.id.B_7);
+    	B_8 = (Button) findViewById(R.id.B_8);
+    	B_9 = (Button) findViewById(R.id.B_9);
+        
         //Listener de botones
-        addListenerOnButton();
+        //addListenerOnButton();
         
-        
-		    if (D)
-		            Log.e(TAG, "+++ ON CREATE +++");
-		
-		    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-		    if (mBluetoothAdapter == null) {
-		            Toast.makeText(this, 
-		                    "Bluetooth is not available.", 
-		                    Toast.LENGTH_LONG).show();
-		            finish();
-		            return;
-		    }
-		
-		    if (!mBluetoothAdapter.isEnabled()) {
-		            Toast.makeText(this, 
-		                    "Please enable your BT and re-run this program.", 
-		                    Toast.LENGTH_LONG).show();
-		            finish();
-		            return;
-		    }
-		
-		    if (D)
-		            Log.e(TAG, "+++ DONE IN ON CREATE, GOT LOCAL BT ADAPTER +++");
+	    if (D)
+	            Log.e(TAG, "+++ ON CREATE +++");
+	
+	    // Get Buethooth Adapter so we can work with it latter
+	    mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+	    // Check Bluetooth is available on the device
+	    if (mBluetoothAdapter == null) {
+	            Toast.makeText(this, 
+	                    "Bluetooth is not available.", 
+	                    Toast.LENGTH_LONG).show();
+	            finish();
+	            return;
+	    }
+	
+	    // Check Bluetooth is enabled
+	    if (!mBluetoothAdapter.isEnabled()) {
+	            Toast.makeText(this, 
+	                    "Please enable your BT and re-run this program.", 
+	                    Toast.LENGTH_LONG).show();
+	            finish();
+	            return;
+	    }
+	
+	    // Cookies =)
+	    if (D)
+	            Log.e(TAG, "+++ DONE IN ON CREATE, GOT LOCAL BT ADAPTER +++");
     }
 
     //Metodos de Banderas de programas onstart, on kill, etc..
@@ -199,1107 +222,136 @@ public class MainActivity extends Activity
                 Log.e(TAG, "--- ON DESTROY ---");
 }
     
-   //codigo para los toggle button /////Display solo imprime los textos de lostoggle botones
-    public void addListenerOnButton() 
-    {
-    	Power = (ToggleButton) findViewById(R.id.Power);
-    	MUTE = (ToggleButton) findViewById(R.id.MUTE);
-    	CHUP = (Button) findViewById(R.id.CHUP);
-    	CHDW = (Button) findViewById(R.id.CHDW);
-    	VUP = (Button) findViewById(R.id.VUP);
-    	VDW = (Button) findViewById(R.id.VDW);
-    	B_0 = (Button) findViewById(R.id.B_0);
-    	B_1 = (Button) findViewById(R.id.B_1);
-    	B_2 = (Button) findViewById(R.id.B_2);
-    	B_3 = (Button) findViewById(R.id.B_3);
-    	B_4 = (Button) findViewById(R.id.B_4);
-    	B_5 = (Button) findViewById(R.id.B_5);
-    	B_6 = (Button) findViewById(R.id.B_6);
-    	B_7 = (Button) findViewById(R.id.B_7);
-    	B_8 = (Button) findViewById(R.id.B_8);
-    	B_9 = (Button) findViewById(R.id.B_9);
-    	
-    	//Codigo para ENVIAR POWER SINGAL
-    	Power.setOnClickListener(new OnClickListener()
-    	{
-    		public void onClick(View v)
-    		{	
-    			RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-        		int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-        		String radioButtonSelected = ""; 
-        		switch (checkedRadioButton)
-        		{
-        		  case R.id.TVSelect1 : radioButtonSelected = "SONY";                	              
-        		  						break;
-        		  case R.id.TVSelect2: radioButtonSelected = "Samsung";
-        				                break;		                      
-        		}
-        		//////////////////////////////////////////////////////////
-        		///***Identificacion del radio button Seleccionado***/////
-        		/////////////////////////////////////////////////////////
-        		
-        		if(radioButtonSelected == "SONY")
-        		{
-    	    		if (D)
-    		                Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-    		        try {
-    		                outStream = btSocket.getOutputStream();
-    		        } catch (IOException e) 
-    		        {
-    		                Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-    		        }
-    		
-    		        String message = "SA90\r\n";
-    		        byte[] msgBuffer = message.getBytes();
-    		        try {
-    		                outStream.write(msgBuffer);
-    		               // outStream.flush();
-    		        } catch (IOException e) 
-    		        {
-    		                Log.e(TAG, "ON RESUME: Exception during write.", e);
-    		        }
-        		}
-        		
-        		if(radioButtonSelected == "Samsung")
-        		{
-    	    		if (D)
-    		                Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-    		        try {
-    		                outStream = btSocket.getOutputStream();
-    		        } catch (IOException e) 
-    		        {
-    		                Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-    		        }
-    		
-    		        String message = "RA90\r\n";
-    		        byte[] msgBuffer = message.getBytes();
-    		        try {
-    		                outStream.write(msgBuffer);
-    		        } catch (IOException e) 
-    		        {
-    		                Log.e(TAG, "ON RESUME: Exception during write.", e);
-    		        }
-        		} 
-    		}
-    	});
-    	
-    	//Codigo para MUTE ON OFF
-    	MUTE.setOnClickListener(new OnClickListener()
-    	{
-    		public void onClick(View v)
-    		{
-    			RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-        		int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-        		String radioButtonSelected = ""; 
-        		switch (checkedRadioButton)
-        		{
-        		  case R.id.TVSelect1 : radioButtonSelected = "SONY";                	              
-        		  						break;
-        		  case R.id.TVSelect2: radioButtonSelected = "Samsung";
-        				                break;		                      
-        		}
-        		
-    			//////////////////////////////////////////////////////////
-    			///***Identificacion del radio button Seleccionado***/////
-    			/////////////////////////////////////////////////////////
-
-    			if(radioButtonSelected == "SONY")
-    			{
-    				if (D)
-    					Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-    				try {
-    					outStream = btSocket.getOutputStream();
-    				} catch (IOException e) 
-    				{
-    					Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-    				}
-
-    				String message = "S290\r\n";
-    				byte[] msgBuffer = message.getBytes();
-    				try {
-    					outStream.write(msgBuffer);
-    					// outStream.flush();
-    				} catch (IOException e) 
-    				{
-    					Log.e(TAG, "ON RESUME: Exception during write.", e);
-    				}
-    			}
-
-    			if(radioButtonSelected == "Samsung")
-    			{
-    				if (D)
-    					Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-    				try {
-    					outStream = btSocket.getOutputStream();
-    				} catch (IOException e) 
-    				{
-    					Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-    				}
-
-    				String message = "R290\r\n";
-    				byte[] msgBuffer = message.getBytes();
-    				try {
-    					outStream.write(msgBuffer);
-    					// outStream.flush();
-    				} catch (IOException e) 
-    				{
-    					Log.e(TAG, "ON RESUME: Exception during write.", e);
-    				}
-    			}	
-    		}
-    	});
-    	
-/*******************************************************************************************************************************************************************************************
- * AQUI SE EMPEZO A PEGAR DEL EXCEL SOBREESCRIBIENDO COSOS
- * 
- * ****************************************************************************************************************************************************************************************/
-		B_1.setOnClickListener(new OnClickListener()
-			{
-			   public void onClick(View v)
-	      { 
-	       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-	          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-	          String radioButtonSelected = ""; 
-	          switch (checkedRadioButton)
-	          {
-	            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-	                  break;
+	public void sendCommand(int id){
+		String cmd;
+		
+		// Initialize everything
+		TVCommand TVCommander = new TVCommand();
+		
+		// Retrieve the IR Command
+		cmd = TVCommander.getCode(Television, id);
+		cmd = cmd + "\r\n";
+		
+		// Send the command to the BT Terminal
+		Log.e("Command", cmd);	
+		BT_sendString(cmd);
+	}
 	
-	            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-	                  break;
-	                        
-	          }
-	          //////////////////////////////////////////////////////////
-	          ///***Identificacion del radio button Seleccionado***/////
-	          /////////////////////////////////////////////////////////
-	          
-	          if(radioButtonSelected == "Sony")
-	          {
-	           if (D)
-	                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-	              try {
-	                      outStream = btSocket.getOutputStream();
-	              } catch (IOException e) 
-	              {
-	                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-	              }
-	      
-	              String message = "S010\r\n";
-	              byte[] msgBuffer = message.getBytes();
-	              try {
-	                      outStream.write(msgBuffer);
-	                     // outStream.flush();
-	              } catch (IOException e) 
-	              {
-	                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-	              }
-	          }
-	          
-	          
-	          if(radioButtonSelected == "Samsung")
-	          {
-	           if (D)
-	                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-	              try {
-	                      outStream = btSocket.getOutputStream();
-	              } catch (IOException e) 
-	              {
-	                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-	              }
-	      
-	              String message = "R010\r\n";
-	              byte[] msgBuffer = message.getBytes();
-	              try {
-	                      outStream.write(msgBuffer);
-	                     // outStream.flush();
-	              } catch (IOException e) 
-	              {
-	                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-	              }
-	          }
-	           
-	      }
-			});
-		B_2.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
+	public void BT_sendString(String message){
+		byte[] msgBuffer = message.getBytes();
+				
+		if (D)
+            Log.e(TAG, "+ Sending data to terminal ... +");
 		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S810\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R810\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_3.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S410\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R410\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_4.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "SC10\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "RC11\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_5.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S210\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R211\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_6.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "SA10\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "RA11\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_7.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S610\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R611\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_8.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "SE10\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "RE11\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_9.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S110\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R110\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		B_0.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S910\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R910\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		CHUP.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S090\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R090\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		CHDW.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S890\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R890\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		VUP.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "S490\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "R490\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-		VDW.setOnClickListener(new OnClickListener()
-		     {
-		      public void onClick(View v)
-		      { 
-		       RadioGroup radioGroup = (RadioGroup) findViewById(R.id.radioGroup1);
-		          int checkedRadioButton = radioGroup.getCheckedRadioButtonId();
-		          String radioButtonSelected = ""; 
-		          switch (checkedRadioButton)
-		          {
-		            case R.id.TVSelect1 : radioButtonSelected = "Sony";                               
-		                  break;
-		
-		            case R.id.TVSelect2 : radioButtonSelected = "Samsung";                               
-		                  break;
-		                        
-		          }
-		          //////////////////////////////////////////////////////////
-		          ///***Identificacion del radio button Seleccionado***/////
-		          /////////////////////////////////////////////////////////
-		          
-		          if(radioButtonSelected == "Sony")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "SC90\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		          
-		          
-		          if(radioButtonSelected == "Samsung")
-		          {
-		           if (D)
-		                      Log.e(TAG, "+ ABOUT TO SAY SOMETHING TO SERVER +");
-		              try {
-		                      outStream = btSocket.getOutputStream();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
-		              }
-		      
-		              String message = "RC91\r\n";
-		              byte[] msgBuffer = message.getBytes();
-		              try {
-		                      outStream.write(msgBuffer);
-		                     // outStream.flush();
-		              } catch (IOException e) 
-		              {
-		                      Log.e(TAG, "ON RESUME: Exception during write.", e);
-		              }
-		          }
-		           
-		      }
-		     });
-
-
-/***************************************************************************************************************************************************
- * 
- *                            FIN
- * 
- * 
- ***************************************************************************************************************************************************/
-
+		// Try to open the BT Stream
+	    try {
+	        outStream = btSocket.getOutputStream();
+	    } 
+	    catch (IOException e){
+	        Log.e(TAG, "ON RESUME: Output stream creation failed.", e);
+	    }
     
-    }
+	    // Write the data to the BT Terminal
+	    try{
+            outStream.write(msgBuffer);
+	    } 
+	    catch (IOException e) {
+	       Log.e(TAG, "ON RESUME: Exception during write.", e);
+	    }
+		
+	}
+    
+	public void onTVSelection(View view) {
+	    
+	    // Check which radio button was clicked
+	    switch(view.getId()) {
+	    
+	    	// Sony Television
+	        case R.id.TVSelect1:
+	        	Log.e(TAG, "Sony is selected");
+	        	Television = "Sony";
+	            break;
+	            
+	        // Other television =)
+	        case R.id.TVSelect2:
+	        	Log.e(TAG, "Other is selected");
+	        	Television = "Samsung";
+	            break;
+	    }
+	}
+	
+	public void onRemoteButton(View view) {
+		Log.e("TV_IN_USE", Television);
+	    
+	    // Check which button was clicked
+	    switch(view.getId()) {
+	    
+	    	// Function Buttons
+	        case R.id.Power:
+	        	sendCommand(Keypad.POWER);
+	            break;
+	            
+	        case R.id.MUTE:
+	        	sendCommand(Keypad.MUTE);
+	            break;
+	            
+	        case R.id.CHUP:
+	        	sendCommand(Keypad.CH_UP);
+	            break;
+	            
+	        case R.id.CHDW:
+	        	sendCommand(Keypad.CH_DW);
+	            break;
+	            
+	        case R.id.VUP:
+	        	sendCommand(Keypad.VOL_UP);
+	            break;
+	            
+	        case R.id.VDW:
+	        	sendCommand(Keypad.VOL_DW);
+	            break;
+	            
+	        // Numeric Keypad
+	        case R.id.B_0:
+	        	sendCommand(Keypad.KEY_0);
+	        	break;
+	        	
+	        case R.id.B_1:
+	        	sendCommand(Keypad.KEY_1);
+	        	break;
+	        	
+	        case R.id.B_2:
+	        	sendCommand(Keypad.KEY_2);
+	        	break;
+	        
+	        case R.id.B_3:
+	        	sendCommand(Keypad.KEY_3);
+	        	break;
+	        	
+	        case R.id.B_4:
+	        	sendCommand(Keypad.KEY_4);
+	        	break;
+	        	
+	        case R.id.B_5:
+	        	sendCommand(Keypad.KEY_5);
+	        	break;
+	        	
+	        case R.id.B_6:
+	        	sendCommand(Keypad.KEY_6);
+	        	break;
+	        	
+	        case R.id.B_7:
+	        	sendCommand(Keypad.KEY_7);
+	        	break;
+	        	
+	        case R.id.B_8:
+	        	sendCommand(Keypad.KEY_8);
+	        	break;
+	        	
+	        case R.id.B_9:
+	        	sendCommand(Keypad.KEY_9);
+	        	break;
+
+	    }
+	}
 }

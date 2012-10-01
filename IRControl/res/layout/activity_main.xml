@@ -27,12 +27,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true"
+                    android:onClick="onTVSelection"
                     android:text="SONY" />
                 
                 <RadioButton
                 android:id="@+id/TVSelect2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:onClick="onTVSelection"
                 android:text="Samsung" />
 
             </RadioGroup>
@@ -70,6 +72,7 @@
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
 	        android:text="ToggleButton"
+	        android:onClick="onRemoteButton"
 	        android:textOff="Power"
 	        android:textOn="Power" />
 
@@ -79,6 +82,7 @@
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
 	        android:checked="true"
+	        android:onClick="onRemoteButton"
 	        android:textOff="MUTE"
 	        android:textOn="MUTE" />
 
@@ -87,6 +91,7 @@
 	        android:layout_width="0dp"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="CH +" />
 	</TableRow>
 	 
@@ -100,6 +105,7 @@
              android:layout_width="match_parent"
              android:layout_height="wrap_content"
              android:layout_weight="1"
+             android:onClick="onRemoteButton"
              android:text="Vol -" />
 
          <Button
@@ -107,6 +113,7 @@
              android:layout_width="fill_parent"
              android:layout_height="wrap_content"
              android:layout_weight="1"
+             android:onClick="onRemoteButton"
              android:text="Vol +" />
 
          <Button
@@ -114,6 +121,7 @@
              android:layout_width="fill_parent"
              android:layout_height="wrap_content"
              android:layout_weight="1"
+             android:onClick="onRemoteButton"
              android:text="CH -" />
      </TableRow>
 	
@@ -127,6 +135,7 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="1" />
 
 	    <Button
@@ -134,6 +143,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="2" />
 
 	    <Button
@@ -141,6 +151,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="3" />
 	</TableRow>
 	
@@ -154,6 +165,7 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="4" />
 
 	    <Button
@@ -161,6 +173,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="5" />
 
 	    <Button
@@ -168,6 +181,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="6" />
 	</TableRow>
 	
@@ -181,6 +195,7 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="7" />
 
 	    <Button
@@ -188,6 +203,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="8" />
 
 	    <Button
@@ -195,6 +211,7 @@
 	        android:layout_width="fill_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="9" />
 	</TableRow>
 
@@ -209,6 +226,7 @@
 	        android:layout_width="match_parent"
 	        android:layout_height="wrap_content"
 	        android:layout_weight="1"
+	        android:onClick="onRemoteButton"
 	        android:text="0" />
 
 	</TableRow>
