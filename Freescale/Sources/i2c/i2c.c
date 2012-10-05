@@ -22,6 +22,10 @@ void Setup_I2C(void){
       // Set error flag to zero to monitor a frame error
       ErrorFlag=0;
       
+      // Set SDA as output
+      DDRB = 0x03;  //SDA = bit 1 del puerto B
+      I2C_wait(1);
+      
       // Set both outputs in high level
       SDA=1;
       //wait 2.5 us
@@ -35,19 +39,24 @@ void Setup_I2C(void){
       //wait 5 us
       I2C_wait(1);
       SCL=0;
+      I2C_wait(1);
       
       /* Leave both at zero */
    }
 
    void IIC_stop_bit (void)
    {
+      
+      // Set SDA as output
+      DDRB = 0x03;  //SDA = bit 1 del puerto B
+      I2C_wait(1);
       // Force clock to zero and wait first half bit time
       SCL=0;
       I2C_wait(0);
       
       // Set SDA to zero and wait second half bit time
       SDA=0;
-      I2C_wait(0);
+      I2C_wait(1);
       
       /* Generate Stop Condition */
       SCL=1;
@@ -63,16 +72,18 @@ void Setup_I2C(void){
   {
       // Wait 5 us
       if(IS_FULL_Time){
-           TIM_TC2     = TIM_TCNT + I2C_FULL_TIME;    
+           IIC_DELAY = I2C_FULL_TIME;    
       }
       // Wait 2.5 us 
       else{
-           TIM_TC2     = TIM_TCNT + I2C_HALF_TIME;
+           IIC_DELAY = I2C_HALF_TIME;
       }
       
       // Enable the timer interruption
+      delayFlag   = 1;
+      TIM_TC2     = TIM_TCNT + IIC_DELAY;
       TIM_TIE_C2I = TRUE;
-      delayFlag=1;
+      
       
       // Wait until the interruption sets the flag to zero
       while(delayFlag);
@@ -94,6 +105,9 @@ void Setup_I2C(void){
       
       temp=dato;
       contador=8;
+      
+      // Set SDA as output
+      DDRB = 0x03;  //SDA = bit 1 del puerto B
 
       do{
           // Set clock to zero and wait first half bit time
@@ -167,6 +181,9 @@ void Setup_I2C(void){
 
    void IIC_NO_ACK (void)
    {
+      // Set SDA as output
+      DDRB = 0x03;  //SDA = bit 1 del puerto B
+      
       // Force clock to zero and wait first half bit time
       SCL=0;
       I2C_wait(0);
@@ -192,13 +209,13 @@ void Setup_I2C(void){
 
    void IIC_SEND_ACK (void)
    {
+      // Set SDA as output
+      DDRB = 0x03;  //SDA = bit 1 del puerto B
+      
       SCL=0;
       
       //wait half bit
       I2C_wait(0); 
-      
-      //SDA direccion salida
-      DDRB = 0x03;
       
       //Change SDA data while clock is down
       SDA=0;
@@ -235,7 +252,17 @@ void Setup_I2C(void){
       IIC_send_byte(0xA0);     
       
       // wait for acknowledge from slave 
-      if (IIC_ACK()){ error(); }
+      while(IIC_ACK()){
+          IR_PORT = TRUE;
+          I2C_wait(1);
+          
+          // Initiate frame
+          IIC_start_bit();
+          
+          // Controling only one device A2=A1=A0=0
+          // Sending Control bits and default device address to zero
+          IIC_send_byte(0xA0);
+      }
       
       // Send memory address to write      
       IIC_send_byte(direccion);
@@ -268,7 +295,18 @@ void Setup_I2C(void){
       IIC_send_byte(0xA0);
       
       // Expect an acknowledge from slave
-      if (IIC_ACK()) { error(); }
+      //if (IIC_ACK()) { error(); }
+      while(IIC_ACK()){
+          IR_PORT = TRUE;
+          I2C_wait(1);
+          
+          // Initiate frame
+          IIC_start_bit();
+          
+          // Controling only one device A2=A1=A0=0
+          // Sending Control bits and default device address to zero
+          IIC_send_byte(0xA0);
+      }
 
       // Send memory address to start writing
       IIC_send_byte(direccion);
@@ -303,16 +341,16 @@ void Setup_I2C(void){
       unsigned char contador;
       unsigned char temp;
       
-      contador=8;
+      contador=7;
+      
+      // Set SDA pin as Input and leave SCL as output
+      DDRB = 0x01;  //SDA = second bit of port B  ( 0 = input, 1 = output)
       
       // Set clock to zero to allow SDA changes
       SCL=0;
       
       // Wait half bit time to start changes on SDA
       I2C_wait(0);
-      
-      // Set SDA pin as Input and leave SCL as output
-      DDRB = 0x01;  //SDA = second bit of port B  ( 0 = input, 1 = output)
       
       do
       {
@@ -404,7 +442,18 @@ void Setup_I2C(void){
       IIC_send_byte(0xA0);
       
       // Expect an acknowledge from slave
-      if (IIC_ACK()) { error(); }
+      //if (IIC_ACK()) { error(); }
+      while(IIC_ACK()){
+          IR_PORT = TRUE;
+          I2C_wait(1);
+          
+          // Initiate frame
+          IIC_start_bit();
+          
+          // Controling only one device A2=A1=A0=0
+          // Sending Control bits and default device address to zero
+          IIC_send_byte(0xA0);
+      }
       
       /* Set Memory address pointer to the desired address*/
       IIC_send_byte(direccion);
@@ -428,11 +477,36 @@ void Setup_I2C(void){
       // Start Frame
       IIC_start_bit();
       
+      // Controling only one device ( A2=A1=A0=0, WB=0 )
+      IIC_send_byte(0xA0);
+      
+      // Expect an acknowledge from slave
+      //if (IIC_ACK()) { error(); }
+      while(IIC_ACK()){
+          IR_PORT = TRUE;
+          I2C_wait(1);
+          
+          // Initiate frame
+          IIC_start_bit();
+          
+          // Controling only one device A2=A1=A0=0
+          // Sending Control bits and default device address to zero
+          IIC_send_byte(0xA0);
+      }      
+      /* Set Memory address pointer to the desired address*/
+      IIC_send_byte(direccion);
+      
+      // Expect an acknowledge from slave
+      if (IIC_ACK()) { error(); }
+   
+      // Initiate frame requesting a read attempt
+      IIC_start_bit();
+      
       // Controling only one device ( A2=A1=A0=0, WB=1 )
       IIC_send_byte(0xA1);
       
       // Expect an acknowledge from slave
-      if (IIC_ACK()) { error(); }
+      if (IIC_ACK()){ error(); }
       
       /* Read Bytes */
       for (i=0; i<sizeof(data); i++)

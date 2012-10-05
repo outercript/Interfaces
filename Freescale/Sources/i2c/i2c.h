@@ -1,14 +1,16 @@
 #include <hidef.h>
 #define SCL PORTB_PB0
 #define SDA PORTB_PB1
-#define I2C_FULL_TIME 160
-#define I2C_HALF_TIME 80
+#define I2C_FULL_TIME 145
+#define I2C_HALF_TIME 145
+#define IR_PORT PORTA_PA3
 
 extern Bool sendingBit;
 extern Bool startBit;
 extern Bool stopBit;
 extern Bool delayFlag;
 extern Bool ErrorFlag;
+extern unsigned char IIC_DELAY;
 
 void Setup_I2C(void);
 void error(void);

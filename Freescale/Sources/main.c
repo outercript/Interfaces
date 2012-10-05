@@ -17,11 +17,13 @@ volatile unsigned int x;
 volatile unsigned int count;
 volatile unsigned int time;
 volatile unsigned int I2C_count;
-
+volatile unsigned char i;
 // Serial Port 0
 Bool sciRxReady;
 Bool sciRxOverflow;
 unsigned char sciRxBuffer[30];
+unsigned char eepromData[8];
+
 unsigned int sciRxIndex;
 
 void TimerInit(void);
@@ -52,6 +54,7 @@ interrupt VectorNumber_Vtimch0 void Carrier_ISR(void){
 }
 
 interrupt VectorNumber_Vtimch1 void IR_Controler(void){
+
     volatile unsigned int temp;
     temp = ControlCount;
         
@@ -64,10 +67,10 @@ interrupt VectorNumber_Vtimch1 void IR_Controler(void){
     // Carrier output true
     if(ControlCount == ir_pulseCount && !ControlStatus){
         ControlCount=0;
-		ControlStatus=1;
-		IR_PORT = FALSE;
-        TIM_TIE_C0I = FALSE;
-    }
+    ControlStatus=1;
+    IR_PORT = FALSE;
+    TIM_TIE_C0I = FALSE;
+}
     
     // Carrier output false 
     else if(ControlCount == ir_idleCount && ControlStatus){
@@ -84,17 +87,16 @@ interrupt VectorNumber_Vtimch1 void IR_Controler(void){
 		
 }
 
-interrupt VectorNumber_Vtimch2 void I2C_Timer(void){
-    //volatile unsigned int temp;
-    //temp = ControlCount;
-        
+interrupt VectorNumber_Vtimch2 void I2C_Timer(void){        
     // Clear Interrupt Flag 
     TIM_TFLG2 |= TIM_TFLG1_C2F_MASK;
 
     // Setup Output Compare Time        
-    TIM_TC2 = TIM_TCNT + I2C_HALF_TIME;
-
-    delayFlag=FALSE;	
+    TIM_TC2     = TIM_TCNT + IIC_DELAY;
+    
+    //Stop wait
+    TIM_TIE_C2I = FALSE;
+    delayFlag   = FALSE;  	
 }
 
 
@@ -141,7 +143,10 @@ void TimerInit(void){
 void PeriphInit(void){
     DDRA  = 0xFF; // Configure A[5, 3..0] as outputs 
     PORTA = 0x00; // Output 0
-
+    
+    DDRB  = 0x03; // Configure A[5, 3..0] as outputs 
+    PORTB = 0x03; // Output 0
+    
     SCIOpenCommunication(SCI_0); 
     sciRxReady = FALSE;
     sciRxOverflow = FALSE;
@@ -167,11 +172,11 @@ void PLLInit(void){
 
 void main(void) {
     count = 0;
-	
     PLLInit();    
     PeriphInit();
     TimerInit();
     Setup_IR();
+    Setup_I2C();
 
     EnableInterrupts;
     
@@ -179,12 +184,35 @@ void main(void) {
     
 		if(sciRxReady) {
             SCICloseCommunication(SCI_0);
-		    rawSend(sciRxBuffer);
+		        // Send IR data
+		        rawSend(sciRxBuffer);
+		        
+		        // Data tu de i2c
+            IIC_byte_write(1,sciRxBuffer[0]);
+            IIC_byte_write(3,sciRxBuffer[1]);
+            IIC_byte_write(5,sciRxBuffer[2]);
+            eepromData[0] = sciRxBuffer[3];
+            eepromData[1] = sciRxBuffer[4];
+            eepromData[2] = sciRxBuffer[5];
+            eepromData[3] = sciRxBuffer[6];
+            eepromData[4] = sciRxBuffer[7];
+            eepromData[5] = sciRxBuffer[8];
+            eepromData[6] = 'X';
+            eepromData[7] = 'Y';
             
+            IIC_page_write (6, eepromData); 
             (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            IIC_sequential_read(6,eepromData);
             sciRxIndex = 0;
             sciRxReady = FALSE;
             SCIOpenCommunication(SCI_0);
+            sprintf(sciRxBuffer,"      %s \r\n\0",eepromData);
+            for(i=0; i<8 ; i++){
+                sciRxBuffer[i] = IIC_random_read (i); 
+            }
+            SendString(SCI_0,"EEPROM DATA: \r\n\0");
+            SendString(SCI_0,sciRxBuffer);
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
         }
 	 	
 
