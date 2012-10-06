@@ -20,12 +20,13 @@
 #define SONY_0LOW   13
 #define SONY_0HIGH  15
 
-#define NEC_1LOW   12
-#define NEC_1HIGH  42
-#define NEC_SLOW   112
-#define NEC_SHIGH  225
+#define NEC_1LOW   41
+#define NEC_1HIGH  12
+#define NEC_SLOW   107 //112
+#define NEC_SHIGH  217 //225 Originales
 #define NEC_0LOW   12
-#define NEC_0HIGH  14
+#define NEC_0HIGH  15
+
 
 extern Bool sendingBit;
 extern Bool toggle;
