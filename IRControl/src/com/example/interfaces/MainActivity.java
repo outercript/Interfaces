@@ -24,7 +24,7 @@ import android.util.Log;
 public class MainActivity extends Activity
 {
 	  private ToggleButton Power, MUTE;
-	  private Button CHDW,CHUP,VUP,VDW,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
+	  private Button CHDW,CHUP,VUP,VDW,PRCH,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
 	  private String Television = "Sony";
 	  private String last_cmd = "";
 	  
@@ -62,6 +62,7 @@ public class MainActivity extends Activity
     	CHDW = (Button) findViewById(R.id.CHDW);
     	VUP = (Button) findViewById(R.id.VUP);
     	VDW = (Button) findViewById(R.id.VDW);
+    	PRCH= (Button) findViewById(R.id.Prev_CH);
     	B_0 = (Button) findViewById(R.id.B_0);
     	B_1 = (Button) findViewById(R.id.B_1);
     	B_2 = (Button) findViewById(R.id.B_2);
@@ -285,7 +286,7 @@ public class MainActivity extends Activity
 	        // Other television =)
 	        case R.id.TVSelect2:
 	        	Log.e(TAG, "Other is selected");
-	        	Television = "Samsung";
+	        	Television = "NEC";
 	            break;
 	    }
 	}
@@ -320,6 +321,11 @@ public class MainActivity extends Activity
 	        case R.id.VDW:
 	        	sendCommand(Keypad.VOL_DW);
 	            break;
+	            
+	        case R.id.Prev_CH:
+	        	sendCommand(Keypad.PR_CH);
+	            break;
+	          
 	            
 	        // Numeric Keypad
 	        case R.id.B_0:

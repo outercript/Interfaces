@@ -29,11 +29,12 @@ public final class R {
         public static final int CHUP=0x7f07000a;
         public static final int MUTE=0x7f070009;
         public static final int Power=0x7f070008;
+        public static final int Prev_CH=0x7f07001c;
         public static final int TVSelect1=0x7f070003;
         public static final int TVSelect2=0x7f070004;
         public static final int VDW=0x7f07000c;
         public static final int VUP=0x7f07000d;
-        public static final int menu_settings=0x7f07001c;
+        public static final int menu_settings=0x7f07001d;
         public static final int radioGroup1=0x7f070002;
         public static final int tableLayout1=0x7f070000;
         public static final int tableRow1=0x7f070005;

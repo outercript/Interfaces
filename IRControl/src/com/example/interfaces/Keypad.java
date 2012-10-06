@@ -14,11 +14,12 @@ public class Keypad {
 	public static final int KEY_9 = 9;
 	
 	// Function Buttons
-	public static final int POWER = 10;
-	public static final int MUTE = 11;
-	public static final int CH_UP = 12;
-	public static final int CH_DW = 13;
+	public static final int POWER  = 10;
+	public static final int MUTE   = 11;
+	public static final int CH_UP  = 12;
+	public static final int CH_DW  = 13;
 	public static final int VOL_UP = 14;
 	public static final int VOL_DW = 15;
+	public static final int PR_CH  = 16;
 
 }
