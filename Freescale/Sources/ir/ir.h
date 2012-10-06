@@ -12,12 +12,20 @@
 #define IR_PORT PORTA_PA3
 #define CARRIER_TIME 402
 #define CONTROLER_TIME 1280
+
 #define SONY_1LOW   13
 #define SONY_1HIGH  29
 #define SONY_SLOW   13
 #define SONY_SHIGH  58
 #define SONY_0LOW   13
 #define SONY_0HIGH  15
+
+#define NEC_1LOW   12
+#define NEC_1HIGH  42
+#define NEC_SLOW   112
+#define NEC_SHIGH  225
+#define NEC_0LOW   12
+#define NEC_0HIGH  14
 
 extern Bool sendingBit;
 extern Bool toggle;
@@ -27,14 +35,19 @@ extern unsigned int ir_idleCount;
 extern unsigned int ControlCount;
 
 
-
-
 void Setup_IR(void);
-void sendSony(unsigned char buff[30]);
 void rawSend(unsigned char buff[30]);
+
+void sendSony(unsigned char buff[30]);
 void SIRCS_Send_High(void);
 void SIRCS_Send_Low(void);
 void SIRCS_Send_Start(void);
+
+void sendNEC(unsigned char buff[30]);
+void NEC32_Send_High(void);
+void NEC32_Send_Low(void);
+void NEC32_Send_Start(void);
+
 void IR_sendBit(void);
 /////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////
