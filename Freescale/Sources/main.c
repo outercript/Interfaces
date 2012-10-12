@@ -6,6 +6,7 @@
 
 #include "sci.h"
 #include "ir.h"
+#include "i2c.h"
 
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
@@ -15,11 +16,14 @@ const unsigned char flash_security  @0xFF0F = 0xFE;
 volatile unsigned int x;
 volatile unsigned int count;
 volatile unsigned int time;
-
+volatile unsigned int I2C_count;
+volatile unsigned char i;
 // Serial Port 0
 Bool sciRxReady;
 Bool sciRxOverflow;
 unsigned char sciRxBuffer[30];
+unsigned char eepromData[8];
+
 unsigned int sciRxIndex;
 
 void TimerInit(void);
@@ -82,6 +86,17 @@ interrupt VectorNumber_Vtimch1 void IR_Controler(void){
 		
 }
 
+interrupt VectorNumber_Vtimch2 void I2C_Timer(void){        
+    // Clear Interrupt Flag 
+    TIM_TFLG2 |= TIM_TFLG1_C2F_MASK;
+
+    // Setup Output Compare Time        
+    TIM_TC2     = TIM_TCNT + IIC_DELAY;
+    
+    //Stop wait
+    TIM_TIE_C2I = FALSE;
+    delayFlag   = FALSE;  	
+}
 
 interrupt VectorNumber_Vsci0 void SciReception_ISR(void){
     
@@ -157,6 +172,7 @@ void main(void) {
     PeriphInit();
     TimerInit();
     Setup_IR();
+    Setup_I2C();
 
     EnableInterrupts;
     
@@ -164,12 +180,38 @@ void main(void) {
     
 		if(sciRxReady) {
             SCICloseCommunication(SCI_0);
-		    rawSend(sciRxBuffer);
+		        rawSend(sciRxBuffer);
+		        
+		        // i2c testcase
+		        for(i=0; i<8 ; i++){
+                IIC_byte_write(i,sciRxBuffer[i]); 
+            }
             
+		        for(i=1; i<3 ; i++){
+                IIC_page_write (i*8,&sciRxBuffer[i*8]);
+            }            
+             
             (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            IIC_sequential_read(0,eepromData);
             sciRxIndex = 0;
             sciRxReady = FALSE;
             SCIOpenCommunication(SCI_0);
+            		        
+            for(i=0; i<8 ; i++){
+                 sciRxBuffer[i] = eepromData[i];
+            }
+            
+            for(i=8; i<24 ; i++){
+                sciRxBuffer[i] = IIC_random_read (i); 
+            }
+            sciRxBuffer[24] = '\r';
+            sciRxBuffer[25] = '\n';
+            sciRxBuffer[26] = '\0';
+            SendString(SCI_0,"EEPROM DATA: \r\n\0");
+            SendString(SCI_0,sciRxBuffer);
+            SendString(SCI_0,"\r\n\0");
+
+            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
         }
 	 	
 
