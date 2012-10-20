@@ -65,10 +65,10 @@ void Setup_IR(void){
 /**********       SONY 12 bit PROTOCOL      ***********/
 
     void sendSony(unsigned char buff[30]){
-    
         unsigned char i;
         unsigned char j;
         volatile unsigned char tmp;
+        
 
       	SIRCS_Send_Start();
       	
@@ -119,6 +119,11 @@ void Setup_IR(void){
         unsigned char i;
         unsigned char j;
         volatile unsigned char tmp;
+        
+        if(buff[1] == 'R'){
+            NEC32_Send_Repeat(); 
+            return;   
+        } 
 
       	NEC32_Send_Start();
       	
@@ -144,8 +149,16 @@ void Setup_IR(void){
             }
     }
 
+    void NEC32_Send_Repeat(void){
+        ir_pulseCount = NEC_RHIGH;  //OscTime
+      	ir_idleCount  = NEC_RLOW;	  //LowTime in 40 us per tick
+      	IR_sendBit();
+      	NEC32_Send_Low();
+      	IR_sendBit();
+    }
+
     void NEC32_Send_Start(void){
-      	ir_pulseCount = NEC_SHIGH; //OscTime
+      	ir_pulseCount = NEC_SHIGH;  //OscTime
       	ir_idleCount  = NEC_SLOW;	  //LowTime in 40 us per tick
       	IR_sendBit();
     }
@@ -159,3 +172,5 @@ void Setup_IR(void){
       	ir_pulseCount = NEC_0HIGH;
       	ir_idleCount  = NEC_0LOW;
     }
+    
+    

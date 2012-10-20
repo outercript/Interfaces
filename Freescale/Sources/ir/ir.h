@@ -22,10 +22,12 @@
 
 #define NEC_1LOW   41
 #define NEC_1HIGH  12
-#define NEC_SLOW   107 //112
-#define NEC_SHIGH  217 //225 Originales
-#define NEC_0LOW   12
-#define NEC_0HIGH  15
+#define NEC_SLOW   109 //112
+#define NEC_SHIGH  219 //225 Originales
+#define NEC_0LOW   13
+#define NEC_0HIGH  12
+#define NEC_RHIGH  217
+#define NEC_RLOW   54
 
 
 extern Bool sendingBit;
@@ -48,6 +50,7 @@ void sendNEC(unsigned char buff[30]);
 void NEC32_Send_High(void);
 void NEC32_Send_Low(void);
 void NEC32_Send_Start(void);
+void NEC32_Send_Repeat(void);
 
 void IR_sendBit(void);
 /////////////////////////////////////////////////////////////////////////////////////////
