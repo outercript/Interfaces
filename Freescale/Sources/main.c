@@ -6,6 +6,7 @@
 
 #include "sci.h"
 #include "ir.h"
+#include "syllabus.h"
 
 #pragma LINK_INFO DERIVATIVE "MC9S12XEP100"
 
