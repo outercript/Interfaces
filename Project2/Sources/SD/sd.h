@@ -120,7 +120,7 @@ enum{
   SD_CMD38, /* Erases all previously selected write blocks */
   SD_CMD39,
   SD_CMD40,
-  SD_CMD41,
+  SD_ACMD41,
   SD_CMD42, /* Used to Set/Reset the Password or lock/unlock the card. A transferred data block includes 
                all the command details - refer to Chapter 4.3.7. The size of the Data Block is defined 
                with SET_BLOCK_LEN command. Reserved bits in the argument and in Lock Card Data Structure 

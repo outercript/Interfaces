@@ -2,6 +2,7 @@
 #include "derivative.h"      /* derivative-specific definitions */
 #include "spi.h"
 #include "sd.h"
+#include "Fat.h"
 
 
 void TimerInit(void){
@@ -31,7 +32,7 @@ void PLLInit(void){
 
 void main(void) {
     uint8_t retcode;
-    uint8_t data;
+    uint8_t data[512];
     volatile uint16_t delay;
 
   /* Initialize Peripherials */
@@ -39,29 +40,15 @@ void main(void) {
     TimerInit();
     PeriphInit();
     EnableInterrupts;
-    
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
-    for(delay=0; delay < 65530; delay++);
 
     retcode = SD_Init();
     
     //Try to read data from SD
-    data = 0x44;
-    retcode = SD_Read_Block(0x0003EE00, &data);
+    retcode = SD_Read_Block(249, &data[0]);
+    
+    //FAT_Read_Master_Block(); 
+    
+    //FAT_LS(); 
 
   for(;;) {
     PORTA_PA2 = TRUE;

@@ -56,7 +56,7 @@ uint8_t gu8SD_CID[16];
 /************************************************/
 uint8_t SD_Init(void){
     volatile uint8_t retcode;
-    uint16_t timeout; 
+    uint8_t timeout; 
 
     SPI_Init();                     // SPI Initialization
     
@@ -70,9 +70,8 @@ uint8_t SD_Init(void){
     
     
     /* Put the card in SPI IDLE State */
-    gu8SD_Argument.lword=0;
-     
-    for(timeout=0; timeout < 255; timeout++){
+    gu8SD_Argument.lword=0; 
+    for(timeout=0; timeout < 250; timeout++){
     
         // Send IDLE State CMD
         SPI_SS=ENABLE;
@@ -88,18 +87,29 @@ uint8_t SD_Init(void){
     if(retcode != 0){       
         return(10 + retcode);
     }
+   
     
+    // Mandatory dummy SPI cycle
+    (void)SPI_Receive_byte();
     
-    /* Enable Aditional commands */
+        
+    /* Check SD Version */
     gu8SD_Argument.lword=0x000001AA;
     
     SPI_SS=ENABLE;
     retcode = SD_SendCommand(SD_CMD8, SD_IDLE);
     SPI_SS=DISABLE;
+    for(timeout=0; timeout < 4; timeout++){
+      retcode = SPI_Receive_byte();
+    }
+   
+   
+    // Mandatory dummy SPI cycle
+    (void)SPI_Receive_byte();
     
-
+    
     /*  Initialize SD Command */ 
-    for(timeout=0; timeout < 65530; timeout++){
+    for(timeout=0; timeout < 250; timeout++){
     
         gu8SD_Argument.lword=0;
         // Send the ACMD command enabler
@@ -113,7 +123,7 @@ uint8_t SD_Init(void){
         // Send ACMD41 for SDC Cards
         gu8SD_Argument.lword=0x40000000;
         SPI_SS=ENABLE;
-        retcode = SD_SendCommand(SD_CMD41, SD_OK);
+        retcode = SD_SendCommand(SD_ACMD41, SD_OK);
         SPI_SS=DISABLE;
         
         // Mandatory dummy SPI cycle
@@ -139,10 +149,14 @@ uint8_t SD_Init(void){
     if(retcode != 0){   
         return(30 + retcode);      // Command IDLE fail
     }
+
+   
+    // Mandatory dummy SPI cycle
+    (void)SPI_Receive_byte();
     
     
     /* Switch to HIGH Speed Mode */
-    //SPI_High_rate();
+    SPI_High_rate();
     return(OK);
 }
 
@@ -175,7 +189,7 @@ uint8_t SD_Write_Block(uint32_t u16SD_Block, uint8_t *pu8DataPointer)
         return(WRITE_DATA_FAILS);      // Command fail
     }
 
-    //SPI_Send_byte(0x00);
+    SPI_Send_byte(0x00);
     while(SPI_Receive_byte()==0x00);  // Dummy SPI cycle
     
     SPI_SS=DISABLE;
@@ -184,29 +198,31 @@ uint8_t SD_Write_Block(uint32_t u16SD_Block, uint8_t *pu8DataPointer)
 
 
 /************************************************/
-uint8_t SD_Read_Block(uint32_t u16SD_Block, uint8_t *pu8DataPointer)
+uint8_t SD_Read_Block(uint32_t u16SD_Block, uint8_t *buffer)
 {
-    uint8_t u8Temp=0;
+    volatile uint8_t u8Temp=0;
     uint16_t u16Counter;
     
     SPI_SS=ENABLE;
 
-    gu8SD_Argument.lword=u16SD_Block;
-    gu8SD_Argument.lword=gu8SD_Argument.lword<< SD_BLOCK_SHIFT;
+    gu8SD_Argument.lword = u16SD_Block;
+    gu8SD_Argument.lword = (gu8SD_Argument.lword << SD_BLOCK_SHIFT);
 
-    if(SD_SendCommand(SD_CMD17,SD_OK))
-    {
+    if(SD_SendCommand(SD_CMD17,SD_OK)){
         SPI_SS=DISABLE;
         return(READ_COMMAND_FAILS);      // Command IDLE fail
     }
     
     while(u8Temp!=0xFE)
-        u8Temp=SPI_Receive_byte();
+        u8Temp = SPI_Receive_byte();
     
-    for(u16Counter=0;u16Counter<BLOCK_SIZE;u16Counter++)
-        *pu8DataPointer++=SPI_Receive_byte();
+    // Fetch the data block, one byte at a time
+    for(u16Counter=0; u16Counter<BLOCK_SIZE; u16Counter++){
+        u8Temp = SPI_Receive_byte();
+        buffer[u16Counter] = u8Temp;
+    }
 
-    (void)SPI_Receive_byte();  // Dummy SPI cycle
+    (void)SPI_Receive_byte();  // Skip CRC SPI cycle
     (void)SPI_Receive_byte();  // Dummy SPI cycle
     
     SPI_SS=DISABLE;
@@ -253,7 +269,7 @@ uint8_t SD_SendCommand(uint8_t u8SDCommand, uint8_t u8SDResponse){
     
     
     /* Returns the response */
-    if(u8Temp & u8SDResponse)   
+    if(u8Temp == u8SDResponse)   
         return(OK);
     
     else            
