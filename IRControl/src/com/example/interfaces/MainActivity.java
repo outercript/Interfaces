@@ -2,7 +2,11 @@ package com.example.interfaces;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.UUID;
+
 
 import android.os.Bundle;
 import android.annotation.TargetApi;
@@ -11,32 +15,45 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.Button;
 import android.widget.ToggleButton;
 import android.util.Log;
 
-
 public class MainActivity extends Activity
-{
+{	
+	///////////////////////////VARIABLE FOR SHARED PREFERENCES///////////////////////////////////////////
+	  public static final String PREFS_NAME = "MyPrefsFile";
+	  private String favorite_list = " ";
+	///////////////////////////VARIABLE FOR SHARED PREFERENCES//////////////////////////////////////////*/  
 	  private ToggleButton Power, MUTE;
-	  private Button CHDW,CHUP,VUP,VDW,PRCH,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
+	  private Button FV_ER,FV_ADD,CHDW,CHUP,VUP,VDW,PRCH,B_0,B_1,B_2,B_3,B_4,B_5,B_6,B_7,B_8,B_9;
 	  private String Television = "Sony";
 	  private String last_cmd = "";
+	  private EditText FV_txt;
+	  private Spinner FV_spinner;
 	  
-////////////////////
-//****BluShit****//
-//////////////////
+			////////////////////////////////////
+			//****Blutooth inicialitation****//
+			//////////////////////////////////
 	  
 	  private static final String TAG = "THINBTCLIENT";
       private static final boolean D = true;
       private BluetoothAdapter mBluetoothAdapter = null;
       private BluetoothSocket btSocket = null;
       private OutputStream outStream = null;
+
+      private List<String> list = new ArrayList<String>();
+      private String value;
+      private String saved_favs[];
       
       // Well known SPP UUID (will *probably* map to
       // RFCOMM channel 1 (default) if not in use);
@@ -46,9 +63,9 @@ public class MainActivity extends Activity
       // ==> hardcode your server's MAC address here <==
       private static String address = "00:12:08:01:93:26";
       
-////////////////////////
-//****BluShit_END****//
-//////////////////////
+			///////////////////////////////////
+			//****Blutooth inicialitation****//
+			///////////////////////////////////
       
     @Override
     public void onCreate(Bundle savedInstanceState) 
@@ -73,10 +90,14 @@ public class MainActivity extends Activity
     	B_7 = (Button) findViewById(R.id.B_7);
     	B_8 = (Button) findViewById(R.id.B_8);
     	B_9 = (Button) findViewById(R.id.B_9);
-        
-        //Listener de botones
-        //addListenerOnButton();
-        
+    	
+    	///////new variables for favorites////////////////////////////////////////////////////////
+    	FV_ER  =  (Button)findViewById(R.id.Fav_erase_button);
+    	FV_ADD =  (Button) findViewById(R.id.Fav_add_button);
+    	FV_txt =  (EditText) findViewById(R.id.Fav_textfd);
+    	FV_spinner = (Spinner) findViewById(R.id.Fav_spinner);
+    	///////new variables for favorites//////////////////////////////////////////////////////*/
+    	addListenerOnSpinnerItemSelection();
 	    if (D)
 	            Log.e(TAG, "+++ ON CREATE +++");
 	
@@ -104,9 +125,19 @@ public class MainActivity extends Activity
 	    // Cookies =)
 	    if (D)
 	            Log.e(TAG, "+++ DONE IN ON CREATE, GOT LOCAL BT ADAPTER +++");
+	    // Restore preferences
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        String savedlist = settings.getString("favorite_list"," ");
+        favorite_list = " ";
+        //*/
+        for (String token : savedlist.split(",")) {
+        	if(token.length() > 0) add_favorite(token);
+        	else
+        		break;
+        }
     }
 
-    //Metodos de Banderas de programas onstart, on kill, etc..
+	//Metodos de Banderas de programas onstart, on kill, etc..
     public void onStart() {
         super.onStart();
         if (D)
@@ -208,6 +239,11 @@ public class MainActivity extends Activity
         super.onStop();
         if (D)
                 Log.e(TAG, "-- ON STOP --");
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putString("favorite_list", favorite_list);
+        // Commit the edits!
+        editor.commit();
 }
 
 @Override
@@ -228,18 +264,29 @@ public class MainActivity extends Activity
 		cmd = cmd + "\r\n";
 		
 		// Send the command to the BT Terminal
-		Log.e("Command", cmd);	
+		Log.e("Command", cmd);
+	
 		BT_sendString(cmd);
-		
-		if (cmd != last_cmd){
+		if(Television=="SONY" && cmd != last_cmd ){
 			for(int i=0; i<2; i++){
-				// Wait until first comand was send
+				// Wait until first command was send
 				try {
 					Thread.sleep(75);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
-				
+				// Send again the command
+				BT_sendString(cmd);
+			}
+		}
+		else if(Television=="NEC"){
+			for(int i=0; i<10; i++){
+				// Wait until first command was send
+				try {
+					Thread.sleep(75);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 				// Send again the command
 				BT_sendString(cmd);
 			}
@@ -324,8 +371,34 @@ public class MainActivity extends Activity
 	            
 	        case R.id.Prev_CH:
 	        	sendCommand(Keypad.PR_CH);
-	            break;
-	          
+	        	break;
+	            
+	        case R.id.Fav_add_button:
+	        	if(FV_txt.getText().toString().trim().length() != 0){
+	        		add_favorite(FV_txt.getText().toString());
+	        		FV_txt.setText(null);
+	        			        		break;
+	        	}
+	        	else
+	        		break;
+	        	
+	        case R.id.Fav_erase_button:
+	        	//Erase from the Shared preferences the saved list
+	        	SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+	            SharedPreferences.Editor editor = settings.edit();
+	        	editor.clear();
+	        	editor.commit();
+	        	favorite_list = " ";
+	        	//
+	        	list.clear();
+	        	//create an array adapter to convert the items on the list to spinner items
+	    		ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+	    			android.R.layout.simple_spinner_item, list);
+	    		dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+	    		
+	    		//assign the new adapter with the dropdown items refreshed
+	    		FV_spinner.setAdapter(dataAdapter);
+	        	break;
 	            
 	        // Numeric Keypad
 	        case R.id.B_0:
@@ -370,4 +443,33 @@ public class MainActivity extends Activity
 
 	    }
 	}
+	
+	private void add_favorite(String favTextfd) {
+		
+		//create a list to store the new dropdown options
+		//List<String> list = new ArrayList<String>();
+		
+		//add to the list the string form the edittext, which will be added to the Spinner
+		list.add(favTextfd);
+		
+		/*Variables and procedures to save in Shared Preferences*/
+		
+		//add the channel number to the list that will be saved in SharedPreferences
+		favorite_list +=  favTextfd + ",";
+		Log.e("Concatenacion", favorite_list);
+		
+		//create an array adapter to convert the items on the list to spinner items
+		ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this,
+			android.R.layout.simple_spinner_item, list);
+		dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+		
+		//assign the new adapter with the dropdown items refreshed
+		FV_spinner.setAdapter(dataAdapter);
+		
+	}
+	
+	public void addListenerOnSpinnerItemSelection() {
+			FV_spinner.setOnItemSelectedListener(new CustomOnItemSelectedListener(this));
+		}
+
 }

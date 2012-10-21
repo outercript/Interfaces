@@ -7,6 +7,14 @@
     android:shrinkColumns="*"
     android:stretchColumns="*" >
 
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center" 
+        android:text="Select a TV"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
     <TableLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -16,12 +24,13 @@
             android:id="@+id/tableRow5"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center_horizontal" >
+            android:gravity="center_horizontal|clip_vertical" >
 
             <RadioGroup
                 android:id="@+id/radioGroup1"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" >
+                android:layout_height="wrap_content"
+                android:orientation="horizontal" >
 
                 <RadioButton
                     android:id="@+id/TVSelect1"
@@ -35,8 +44,10 @@
                     android:id="@+id/TVSelect2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:checked="false"
                     android:onClick="onTVSelection"
                     android:text="Toshiba" />
+
             </RadioGroup>
         </TableRow>
     </TableLayout>
@@ -236,6 +247,70 @@
             android:onClick="onRemoteButton"
             android:text="PREV CH" />
     </TableRow>
+
+    <TableRow
+        android:id="@+id/tableRow8"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" >
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:text="Favorites"
+            android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    </TableRow>
+
+	<TableRow
+	        android:id="@+id/tableRow9"
+	        android:layout_width="match_parent"
+	        android:layout_height="wrap_content"
+	        android:gravity="center" >
+
+	    <Spinner
+	        android:id="@+id/Fav_spinner"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	         />
+	
+	    <EditText
+	        android:id="@+id/Fav_textfd"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content"
+	        android:digits="1234567890"
+	        android:ems="5"
+	        android:hint="Channel "
+	        android:inputType="number"
+	        android:maxLength="100"
+	        android:singleLine="true" >
+	
+	        <requestFocus />
+	    </EditText>
+	     <Button
+            android:id="@+id/Fav_add_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="onRemoteButton"
+            android:text="ADD" />
+	</TableRow>
+
+	<TableRow
+	    android:id="@+id/tableRow10"
+	    android:layout_width="wrap_content"
+	    android:layout_height="wrap_content" >
+
+		<Button
+		    android:id="@+id/Fav_erase_button"
+		    android:layout_width="wrap_content"
+		    android:layout_height="wrap_content"
+		    android:onClick="onRemoteButton"
+		    android:text="Clear Favs" />
+
+	</TableRow>
 
 </TableLayout>  
 
