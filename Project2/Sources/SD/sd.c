@@ -47,6 +47,7 @@
 
 /* Includes */
 #include "sd.h"
+#include "sci.h"
 
 /* Gobal Variables */
 T32_8 gu8SD_Argument;
@@ -56,13 +57,16 @@ uint8_t gu8SD_CID[16];
 /************************************************/
 uint8_t SD_Init(void){
     volatile uint8_t retcode;
-    uint8_t timeout; 
+    volatile uint8_t card_type;
+    uint16_t timeout; 
 
     SPI_Init();                     // SPI Initialization
+    card_type = CARD_NONE;
     
     /* SD Software Reboot */
+    SendString(SCI_0,"- Soft Reset\r\n\0");
     SPI_SS=DISABLE;
-    SD_CLKDelay(10);               // Send 80 clocks
+    SD_CLKDelay(20);               // Send 80 clocks
 
     
     /* Clear the cards buffer */
@@ -70,7 +74,8 @@ uint8_t SD_Init(void){
     
     
     /* Put the card in SPI IDLE State */
-    gu8SD_Argument.lword=0; 
+    gu8SD_Argument.lword=0;
+    SendString(SCI_0,"- Put in Idle State\r\n\0"); 
     for(timeout=0; timeout < 250; timeout++){
     
         // Send IDLE State CMD
@@ -84,69 +89,150 @@ uint8_t SD_Init(void){
     }
     
     /* Check the card state is IDLE */
-    if(retcode != 0){       
+    if(retcode != 0){
+        SendString(SCI_0,"-- Fail: Not Idle!\r\n\0"); 
+        SendString(SCI_0,"-- Error code: ");
+        SendHexValue(SCI_0, retcode); 
+        
+        SendString(SCI_0,"-- Is the card present!?\r\n\0");      
         return(10 + retcode);
     }
    
     
     // Mandatory dummy SPI cycle
     (void)SPI_Receive_byte();
+    retcode = 0xFF;
     
         
     /* Check SD Version */
+    SendString(SCI_0,"\r\n\0");
+    SendString(SCI_0,"- Sending CMD8\r\n\0");
     gu8SD_Argument.lword=0x000001AA;
-    
+      
     SPI_SS=ENABLE;
     retcode = SD_SendCommand(SD_CMD8, SD_IDLE);
     SPI_SS=DISABLE;
-    for(timeout=0; timeout < 4; timeout++){
-      retcode = SPI_Receive_byte();
+
+    // Check CMD8 Response
+    if(retcode == 0){
+        SendString(SCI_0,"-- CMD8 Accepted\r\n\0");
+        for(timeout=0; timeout < 4; timeout++){
+            retcode = SPI_Receive_byte();
+        }
+        
+        card_type = CARD_SD2;
+        SendString(SCI_0,"-- Detected SD2 or SDHC\r\n\0"); 
+    } 
+    
+    else{
+        SendString(SCI_0,"-- CMD8 failed\r\n\0");
+        SendString(SCI_0,"-- Error code: ");
+        SendHexValue(SCI_0, retcode);
+        
+        card_type = CARD_SD1;
+        SendString(SCI_0,"-- Detected SD1 or MMC\r\n\0"); 
     }
    
    
     // Mandatory dummy SPI cycle
     (void)SPI_Receive_byte();
+    retcode = 0xFF;
     
     
-    /*  Initialize SD Command */ 
-    for(timeout=0; timeout < 250; timeout++){
-    
-        gu8SD_Argument.lword=0;
-        // Send the ACMD command enabler
-        SPI_SS=ENABLE;
-        (void)SD_SendCommand(SD_CMD55, SD_OK);
-        SPI_SS=DISABLE;
+    /*  Initialize SD Command */
+    SendString(SCI_0,"\r\n\0");
+    SendString(SCI_0,"- Starting memory card\r\n\0");
+    if(card_type > CARD_MMC){
+      
+        SendString(SCI_0,"-- Init as SD card\r\n\0");
+        for(timeout=0; timeout < 65530; timeout++){
+            
+            // Send the ACMD command enabler
+            gu8SD_Argument.lword=0;
+            SPI_SS=ENABLE;
+            (void)SD_SendCommand(SD_CMD55, SD_OK);
+            SPI_SS=DISABLE;
+            
+            // Mandatory dummy SPI cycle
+            (void)SPI_Receive_byte();
         
-        // Mandatory dummy SPI cycle
-        (void)SPI_Receive_byte();
-    
-        // Send ACMD41 for SDC Cards
-        gu8SD_Argument.lword=0x40000000;
-        SPI_SS=ENABLE;
-        retcode = SD_SendCommand(SD_ACMD41, SD_OK);
-        SPI_SS=DISABLE;
-        
-        // Mandatory dummy SPI cycle
-        (void)SPI_Receive_byte();
-        
-        if(retcode == 0){       
-            break;
+            // Send ACMD41 for SDC Cards
+            gu8SD_Argument.lword=0x40000000;
+            SPI_SS=ENABLE;
+            retcode = SD_SendCommand(SD_ACMD41, SD_OK);
+            SPI_SS=DISABLE;
+            
+            // Mandatory dummy SPI cycle
+            (void)SPI_Receive_byte();
+            
+            
+            // Detect MMC Cards
+            if((retcode & 0x04) && (retcode != 0xFF)){
+                SendString(SCI_0,"--- Fail: Not working\r\n\0");
+                SendString(SCI_0,"--- Error code: ");
+                SendHexValue(SCI_0, retcode);
+                
+                SendString(SCI_0,"--- Is this a MMC Card?\r\n\0");
+                SendString(SCI_0,"\r\n\0");
+                card_type = CARD_MMC;
+                break;  
+            }
+            
+            // Card exited Idle status
+            if(retcode == 0){
+                SendString(SCI_0,"--- Success\r\n\0");       
+                break;
+            }
         }
     }
     
+    // MMC Card Initialization
+    if(card_type == CARD_MMC){
+        SendString(SCI_0,"-- Init as MMC card\r\n\0");
+        for(timeout=0; timeout < 65530; timeout++){
+
+            gu8SD_Argument.lword=0;
+            SPI_SS=ENABLE;
+            retcode = SD_SendCommand(SD_CMD1, SD_OK);
+            SPI_SS=DISABLE;
+            
+            // Mandatory dummy SPI cycle
+            (void)SPI_Receive_byte();
+            
+            if(retcode == 0){
+                SendString(SCI_0,"--- Success\r\n\0");       
+                break;
+            }
+        }
+    
+    }
+    
     if(retcode != 0){
+        SendString(SCI_0,"- Fail: Memory timed out!\r\n\0");
+        SendString(SCI_0,"Error code: ");
+        SendHexValue(SCI_0, retcode); 
         return(20 + retcode);  
     }
+    
+    
+    // Mandatory dummy SPI cycle
+    (void)SPI_Receive_byte();
+    retcode = 0xFF;
         
     
-    /* Set SD Block Length */  
+    /* Set SD Block Length */ 
+    SendString(SCI_0,"\r\n\0"); 
+    SendString(SCI_0,"- Setting Block Size\r\n\0");
     gu8SD_Argument.lword=SD_BLOCK_SIZE;
     
     SPI_SS=ENABLE;
     retcode = SD_SendCommand(SD_CMD16, SD_OK);
     SPI_SS=DISABLE;                    
     
-    if(retcode != 0){   
+    if(retcode != 0){ 
+        SendString(SCI_0,"-- Block Size Fail\r\n\0");
+        SendString(SCI_0,"-- Error code: ");
+        SendHexValue(SCI_0, retcode);
         return(30 + retcode);      // Command IDLE fail
     }
 
@@ -155,8 +241,13 @@ uint8_t SD_Init(void){
     (void)SPI_Receive_byte();
     
     
+    SendString(SCI_0,"\r\n\0");
+    SendString(SCI_0,"- SD High Speed\r\n\0");
     /* Switch to HIGH Speed Mode */
     SPI_High_rate();
+    
+    SendString(SCI_0,"\r\n\0");
+    SendString(SCI_0,"- Memory Initialized\r\n\0");
     return(OK);
 }
 

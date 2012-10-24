@@ -42,10 +42,11 @@ enum
 };
 
 enum{
-    SD_NONE,
-    SD_SD1,
-    SD_SD2,
-    SD_SDHC
+    CARD_NONE,
+    CARD_MMC,
+    CARD_SD1,
+    CARD_SD2,
+    CARD_SDHC
 };
 
 /* TypeDefs */
