@@ -81,27 +81,34 @@ void PLLInit(void){
 void main(void) {
     uint8_t retcode;
     uint8_t data[512];
-    volatile uint16_t delay;
 
   /* Initialize Peripherials */
     PLLInit();    
     TimerInit();
     PeriphInit();
     EnableInterrupts;
+    
+    (void)memset(&data[0],0, sizeof(data));
 
+    SendString(SCI_0,"Initializing SD Card\r\n\0");
     retcode = SD_Init();
     
     //Try to read data from SD
-    retcode = SD_Read_Block(249, &data[0]);
+    if(retcode == 0){
+        SendString(SCI_0,"Reading SD Card\r\n\0");
+        retcode = SD_Read_Block(135, &data[0]);
+        
+        //FAT_Read_Master_Block();
+        
+        //FAT_LS();
+    }
     
-    //FAT_Read_Master_Block(); 
-    
-    //FAT_LS(); 
+    SendString(SCI_0,"Finished!\r\n\0");
 
-  for(;;) {
-    PORTA_PA2 = TRUE;
-    PORTA_PA3 = TRUE;
-  
-  } /* loop forever */
+  /* loop forever */
+    for(;;) {
+        PORTA_PA2 = TRUE;
+        PORTA_PA3 = TRUE;
+    } 
   /* please make sure that you never leave main */
 }
