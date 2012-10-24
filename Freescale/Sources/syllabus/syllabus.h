@@ -21,7 +21,10 @@ extern struct syllable{
   unsigned char size;
 };
 
-extern signed char uns[17][2];
+static unsigned char uns[35] = {'b','r','b','l','c','r','c','l','d',
+                                'r','f','r','f','l','g','r','g','l',
+                                'k','r','l','l','p','r','p','l','t',
+                                'r','r','r','c','h','t','l'};
 
 Bool isVowel(unsigned char x);
 Bool isLetter(unsigned char L);
@@ -30,3 +33,4 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 struct syllable case_2(unsigned char word[30], unsigned char size, unsigned char *index, unsigned char L1, unsigned char L2);
 struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char *index, unsigned char L1, unsigned char L2);
 void text2speech(unsigned char word[30]);
+void send_syllable(struct syllable syl);

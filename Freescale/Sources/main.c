@@ -152,6 +152,7 @@ void PLLInit(void){
 }
 
 void main(void) {
+    volatile unsigned char copy[30];
     count = 0;
 	
     PLLInit();    
@@ -163,11 +164,14 @@ void main(void) {
     
     for(;;) {
     
-		if(sciRxReady) {
+		    if(sciRxReady) {
             SCICloseCommunication(SCI_0);
-		    rawSend(sciRxBuffer);
+		        //rawSend(sciRxBuffer);
+		        (void) memset(&copy[0], 0, sizeof(copy));
+		        sprintf(copy, sciRxBuffer);
+		        (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
+            text2speech(copy);
             
-            (void) memset(&sciRxBuffer[0], 0, sizeof(sciRxBuffer));
             sciRxIndex = 0;
             sciRxReady = FALSE;
             SCIOpenCommunication(SCI_0);

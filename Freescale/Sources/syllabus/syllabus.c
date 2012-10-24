@@ -9,27 +9,10 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 #include <MC9S12XEP100.h>     /* derivative-specific definitions */
+#include <stdio.h>
 #include "syllabus.h"
+#include "sci.h"
 
-void Setup_Syllabus(void){
-  uns[0][0] = 'b';  uns[0][1] = 'r';
-  uns[1][0] = 'b';  uns[1][1] = 'l';
-  uns[2][0] = 'c';  uns[2][1] = 'r';
-  uns[3][0] = 'c';  uns[3][1] = 'l';
-  uns[4][0] = 'd';  uns[4][1] = 'r';
-  uns[5][0] = 'f';  uns[5][1] = 'r';
-  uns[6][0] = 'f';  uns[6][1] = 'l';
-  uns[7][0] = 'g';  uns[7][1] = 'r';
-  uns[8][0] = 'g';  uns[8][1] = 'l';
-  uns[9][0] = 'k';  uns[9][1] = 'r';
-  uns[10][0] = 'l'; uns[10][1] = 'l';
-  uns[11][0] = 'p'; uns[11][1] = 'r';
-  uns[12][0] = 'p'; uns[12][1] = 'l';
-  uns[13][0] = 't'; uns[13][1] = 'r';
-  uns[14][0] = 'r'; uns[14][1] = 'r';
-  uns[15][0] = 'c'; uns[15][1] = 'h';
-  uns[16][0] = 't'; uns[16][1] = 'l';
-}
 
 Bool isVowel(unsigned char x){
 	//Char to lower case
@@ -48,7 +31,7 @@ Bool is_CCV_next(unsigned char word[30], unsigned char size, unsigned char index
 	if ((size - index) > 2){
 		if (isVowel(word[index+2])){
 			for (i=0; i < 17; i++){
-				if(word[index] == uns[i][0] && word[index+1] == uns[i][1])
+				if(word[index] == uns[(i*2)] && word[index+1] == uns[(i*2 + 1)])
 					return TRUE;
 			}
 		}
@@ -72,7 +55,8 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 	
 	//case: VX | #
 	if ( (*(index)+1) == size){
-		syl.ch[1] = word[*(index)++];
+	  *index += 1;
+		syl.ch[1] = word[*index];
 		syl.size  = 2;
 		return syl;
 	}
@@ -80,7 +64,8 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 	//error VX | %
 	if ( !isLetter(word[*(index)+1]) ){
 		//Skip with index pointing to weird char
-		syl.ch[1] = word[*(index)++];
+		*index += 1;
+		syl.ch[1] = word[*index];
 		syl.size  = 2;
 		return syl;
 	}
@@ -94,29 +79,34 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 */
 	//case: VX | CV
 	if ( (!isVowel(word[*(index)+1]) && isVowel(word[*(index)+2])) || is_CCV_next(word, size, *(index)+1) ){
-		syl.ch[1] = word[*(index)++];
+	  *index += 1;
+		syl.ch[1] = word[*index];
 		syl.size  = 2;
 		return syl;
 	}
 /*
 	//case: VX | CCV
 	if ( is_CCV_next(word, size, *(index)+1) ){
-		syl.ch[1] = word[*(index)++];
+		syl.ch[1] = word[*index];
 		syl.size  = 2;
 		return syl;
 	}
 */
 	//case: VVC | #
 	if ( *(index)+2 == size ){
-		syl.ch[1] = word[*(index)++];
-		syl.ch[2] = word[*(index)++];
+		syl.ch[1] = word[*index];
+		*index += 1;
+		syl.ch[2] = word[*index];
+		*index += 1;
 		syl.size  = 3;
 		return syl;
 	}
 	
 	//Default
-	syl.ch[1] = word[*(index)++];
-	syl.ch[2] = word[*(index)++];
+	syl.ch[1] = word[*index];
+	*index += 1;
+	syl.ch[2] = word[*index];
+	*index += 1;
 	syl.size  = 3;
 	return syl;	
 }
@@ -135,15 +125,17 @@ struct syllable case_2(unsigned char word[30], unsigned char size, unsigned char
 	if ( !isLetter(word[*(index)]) ) return syl;
 
 	//case: CVX | #
-	if ( *(index)+1 == size ){
-		syl.ch[2] = word[*(index)++];
+	if ( *(index)+1 == size ){	  
+		syl.ch[2] = word[*index++];
+		*index += 1;
 		syl.size  = 3;
 		return syl;
 	}
 
 	//case: CVX | %
 	if ( !isLetter(word[*(index)+1]) ){
-		syl.ch[2] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
 		syl.size  = 3;
 		return syl;
 	}
@@ -156,30 +148,35 @@ struct syllable case_2(unsigned char word[30], unsigned char size, unsigned char
 */
 	//case: CVXX | #
 	if ( *(index)+2 == size ){
-		syl.ch[2] = word[*(index)++];
-		syl.ch[3] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
+		syl.ch[3] = word[*index];
+		*index += 1;
 		syl.size  = 4;
 		return syl;
 	}
 
 	//case: CVXX | %
 	if ( !isLetter(word[*(index)+2]) ){
-		syl.ch[2] = word[*(index)++];
-		syl.ch[3] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
+		syl.ch[3] = word[*index];
+		*index += 1;
 		syl.size  = 4;
 		return syl;
 	}
 
 	//case: CVX | CV | CCV
 	if ( (!isVowel(word[*(index)+1]) && isVowel(word[*(index)+2])) || is_CCV_next(word, size, *(index)+1) ){
-		syl.ch[2] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
 		syl.size  = 3;
 		return syl;
 	}
 /*
 	//case: CVX | CCV
 	if ( is_CCV_next(word, size, *(index)+1) ){
-		syl.ch[2] = word[*(index)++];
+		syl.ch[2] = word[*index];
 		syl.size  = 3;
 		return syl;
 	}
@@ -188,8 +185,10 @@ struct syllable case_2(unsigned char word[30], unsigned char size, unsigned char
 	if ( *(index)+3 < size ){
 		//case: CVXX | CV | CCV
 		if ( (!isVowel(word[*(index)+2]) && isVowel(word[*(index)+3])) || is_CCV_next(word, size, *(index)+2) ){
-			syl.ch[2] = word[*(index)++];
-			syl.ch[3] = word[*(index)++];
+			syl.ch[2] = word[*index];
+			*index += 1;
+			syl.ch[3] = word[*index];
+			*index += 1;
 			syl.size  = 4;
 			return syl;
 		}
@@ -197,16 +196,22 @@ struct syllable case_2(unsigned char word[30], unsigned char size, unsigned char
 
 	//case: CVVVC | #
 	if ( *(index)+3 == size ){
-		syl.ch[2] = word[*(index)++];
-		syl.ch[3] = word[*(index)++];
-		syl.ch[4] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
+		syl.ch[3] = word[*index];
+		*index += 1;
+		syl.ch[4] = word[*index];
+		*index += 1;
 		syl.size  = 5;
 		return syl;
 	}
 	if ( isVowel(word[*(index)]) && isVowel(word[*(index)+1]) && !isVowel(word[*(index)+2]) ){
-		syl.ch[2] = word[*(index)++];
-		syl.ch[3] = word[*(index)++];
-		syl.ch[4] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
+		syl.ch[3] = word[*index];
+		*index += 1;
+		syl.ch[4] = word[*index];
+		*index += 1;
 		syl.size  = 5;
 		return syl;
 	}
@@ -231,7 +236,8 @@ struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char
 	//valid letters for this case CCV | XXX
 	if ( isVowel(word[*(index)]) ){
 		//move pointer after CCV and update syl since all returns will include CCV
-		syl.ch[2] = word[*(index)++];
+		syl.ch[2] = word[*index];
+		*index += 1;
 		syl.size  = 3;
 		
 		//case: CCV | #
@@ -242,14 +248,16 @@ struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char
 		
 		//cases: CCVX | #
 		if ( *(index)+1 == size ){
-			syl.ch[3] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
 			syl.size = 4;
 			return syl;
 		}
 		
 		//cases: CCVX | %
 		if ( !isLetter(word[*(index)+1]) ){
-			syl.ch[3] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
 			syl.size  = 4;
 			return syl;
 		}
@@ -265,16 +273,20 @@ struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char
 */
 		//case: CCVXX | #
 		if ( *(index)+2 == size ){
-			syl.ch[3] = word[*(index)++];
-			syl.ch[4] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
+			syl.ch[4] = word[*index];
+			*index += 1;
 			syl.size  = 5;
 			return syl;
 		}
 		
 		//case: CCVXX | %
 		if ( !isLetter(word[*(index)+2]) ){
-			syl.ch[3] = word[*(index)++];
-			syl.ch[4] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
+			syl.ch[4] = word[*index];
+			*index += 1;
 			syl.size  = 5;
 			return syl;
 		}
@@ -282,7 +294,8 @@ struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char
 		/* Verified that CCVX | XX exists */
 		//case: CCVX | CV
 		if ( (!isVowel(word[*(index)+1]) && isVowel(word[*(index)+2])) || is_CCV_next(word, size, *(index)+1) ){
-			syl.ch[3] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
 			syl.size  = 4;
 			return syl;
 		}
@@ -293,8 +306,10 @@ struct syllable case_3(unsigned char word[30], unsigned char size, unsigned char
 */
 		//default case: CCVXC
 		if ( !isVowel(word[*(index)+1]) ){
-			syl.ch[3] = word[*(index)++];
-			syl.ch[4] = word[*(index)++];
+			syl.ch[3] = word[*index];
+			*index += 1;
+			syl.ch[4] = word[*index];
+			*index += 1;
 			syl.size  = 5;
 			return syl;
 		}
@@ -313,7 +328,7 @@ void text2speech(unsigned char word[30]){
 	volatile struct syllable syl;
 	
 	index = 0;
-	size  = sizeof(word);
+	size  = 30;
 	
 	while ( index < size ){
 	
@@ -330,15 +345,19 @@ void text2speech(unsigned char word[30]){
 */
 		if ( isVowel(L1) ){
 			//print "Case 1. V"
+			index++;
 			syl = case_1(word, size, &(index), L1);
+			send_syllable(syl);
 			continue;
 		}
 		
 		//Hang in there baby
 		if ( size == index+1 ){
 			//Play sound L1 which is a C and is the last char
+			index++;
 			syl.ch[0] = L1;
 			syl.size  = 1;
+			send_syllable(syl);
 			break;
 		}
 
@@ -348,12 +367,14 @@ void text2speech(unsigned char word[30]){
 			//print "Case 2. CV"
 			index += 2;
 			syl = case_2(word, size, &index, L1, L2);
+			send_syllable(syl);
 			continue;
 		}
 		else if ( isLetter(L2) ){
 			//print "Case 3. CC"
 			index += 2;
 			syl = case_3(word, size, &index, L1, L2);
+			send_syllable(syl);
 			continue;
 		}
 		else{
@@ -361,7 +382,26 @@ void text2speech(unsigned char word[30]){
 			index++;
 			syl.ch[0] = L1;
 			syl.size  = 1;
+			send_syllable(syl);
 			continue;
 		}
 	}
+}
+
+void send_syllable(struct syllable syl){
+  volatile unsigned char i;
+  volatile unsigned char coso[10];
+  
+  for (i=0; i<7; i++){
+      if(i < syl.size) 
+          coso[i] = syl.ch[i];
+      else 
+          coso[i] = ' ';
+  }
+  coso[7] = '\r';
+  coso[8] = '\n';
+  coso[9] = '\0';
+  SCIOpenCommunication(SCI_0);
+  SendString(SCI_0, coso);
+ 
 }
