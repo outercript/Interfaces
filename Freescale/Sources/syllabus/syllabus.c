@@ -55,8 +55,8 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 	
 	//case: VX | #
 	if ( (*(index)+1) == size){
-	  *index += 1;
 		syl.ch[1] = word[*index];
+		*index += 1;
 		syl.size  = 2;
 		return syl;
 	}
@@ -64,8 +64,8 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 	//error VX | %
 	if ( !isLetter(word[*(index)+1]) ){
 		//Skip with index pointing to weird char
-		*index += 1;
 		syl.ch[1] = word[*index];
+		*index += 1;
 		syl.size  = 2;
 		return syl;
 	}
@@ -79,8 +79,8 @@ struct syllable case_1(unsigned char word[30], unsigned char size, unsigned char
 */
 	//case: VX | CV
 	if ( (!isVowel(word[*(index)+1]) && isVowel(word[*(index)+2])) || is_CCV_next(word, size, *(index)+1) ){
-	  *index += 1;
 		syl.ch[1] = word[*index];
+		*index += 1;
 		syl.size  = 2;
 		return syl;
 	}
